@@ -1,5 +1,6 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
+import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.support.v7.app.AppCompatActivity;
@@ -21,32 +22,120 @@ import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    // Hard coded paths for OnePlus 3
-    private static final String TEMPERATURE_FILE_PATH =
-            "/sys/class/thermal/thermal_zone23/temp";
-    private static final String CPU0_FREQ_FILE_PATH =
-            "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq";
-    private static final String CPU1_FREQ_FILE_PATH =
-            "/sys/devices/system/cpu/cpu1/cpufreq/scaling_cur_freq";
-    private static final String CPU2_FREQ_FILE_PATH =
-            "/sys/devices/system/cpu/cpu2/cpufreq/scaling_cur_freq";
-    private static final String CPU3_FREQ_FILE_PATH =
-            "/sys/devices/system/cpu/cpu3/cpufreq/scaling_cur_freq";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final TextView tvFilePath = findViewById(R.id.tvFilePath);
-        tvFilePath.setText(TEMPERATURE_FILE_PATH);
+        final List<ThermalZone> thermalZones = getThermalZones();
+        final Map<ThermalZone, TextView> tvByThermalZone = createTemperatureTextViews(thermalZones);
 
         final List<CPU> cpus = getCpus();
+        final Map<CPU, TextView> tvByCpu = createCpuTextViews(cpus);
+
+
+        Thread monitoringThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final TextView tvTime = findViewById(R.id.tvTime);
+
+                while (true) {
+                    for (ThermalZone thermalZone : thermalZones) {
+                        try {
+                            thermalZone.updateTemperature();
+                        } catch (IOException e) {
+                            // TODO
+                            e.printStackTrace();
+                        }
+                    }
+
+                    for (CPU cpu : cpus) {
+                        try {
+                            cpu.updateFrequency();
+                        } catch (IOException e) {
+                            // TODO
+                            e.printStackTrace();
+                        }
+                    }
+
+                    // Can't touch views from separate thread
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            for (Map.Entry<ThermalZone, TextView> tvForThermalZone : tvByThermalZone.entrySet()) {
+                                tvForThermalZone.getValue().setText(String.valueOf(tvForThermalZone.getKey().getLastTemperature()));
+                            }
+
+                            for (Map.Entry<CPU, TextView> tvForCpu : tvByCpu.entrySet()) {
+                                tvForCpu.getValue().setText(String.valueOf(tvForCpu.getKey().getLastFrequency()));
+                            }
+
+                            tvTime.setText(new Date().toString());
+                        }
+                    });
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+            }
+        });
+        monitoringThread.start();
+    }
+
+    @NonNull
+    private Map<ThermalZone, TextView> createTemperatureTextViews(List<ThermalZone> thermalZones) {
+        // TODO: Use different layout
         ConstraintLayout rootLayout = findViewById(R.id.rootLayout);
         ConstraintSet set = new ConstraintSet();
 
-        int prevId = R.id.tvFilePath; // We begin inserting the TextViews after this view
-        final Map<CPU, TextView> tvByCpu = new HashMap<>();
+        int prevId = R.id.tvTime; // We begin inserting the TextViews after this view
+        final Map<ThermalZone, TextView> tvByThermalZone = new HashMap<>();
+        for (ThermalZone thermalZone : thermalZones) {
+            // Create label text view
+            TextView tvZoneIdentifier = new TextView(this);
+            tvZoneIdentifier.setText(thermalZone.getId() + " (" + thermalZone.getType() + "):");
+            tvZoneIdentifier.setId(View.generateViewId());
+
+            // Generate layout params for value text view
+            ConstraintLayout.LayoutParams valueLayoutParams =
+                    new ConstraintLayout.LayoutParams(
+                            ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                            ConstraintLayout.LayoutParams.WRAP_CONTENT);
+            valueLayoutParams.setMarginStart(
+                    (int) TypedValue.applyDimension(
+                            TypedValue.COMPLEX_UNIT_DIP, 8, getResources().getDisplayMetrics()));
+
+            // Create value text view
+            TextView tvZoneTemp = new TextView(this);
+            tvZoneTemp.setId(View.generateViewId());
+            tvZoneTemp.setLayoutParams(new ConstraintLayout.LayoutParams(valueLayoutParams));
+
+            // Add views and set constraints
+            rootLayout.addView(tvZoneIdentifier);
+            rootLayout.addView(tvZoneTemp);
+            set.clone(rootLayout);
+            set.connect(tvZoneIdentifier.getId(), ConstraintSet.TOP, prevId, ConstraintSet.BOTTOM);
+            set.connect(tvZoneIdentifier.getId(), ConstraintSet.START, rootLayout.getId(), ConstraintSet.START);
+            set.connect(tvZoneTemp.getId(), ConstraintSet.TOP, tvZoneIdentifier.getId(), ConstraintSet.TOP);
+            set.connect(tvZoneTemp.getId(), ConstraintSet.START, tvZoneIdentifier.getId(), ConstraintSet.END);
+            set.applyTo(rootLayout);
+
+            prevId = tvZoneIdentifier.getId();
+            tvByThermalZone.put(thermalZone, tvZoneTemp);
+        }
+        return tvByThermalZone;
+    }
+
+    @NonNull
+    private Map<CPU, TextView> createCpuTextViews(List<CPU> cpus) {
+        // TODO: Use different layout
+        ConstraintLayout rootLayout = findViewById(R.id.rootLayout);
+        ConstraintSet set = new ConstraintSet();
+
+        int prevId = R.id.tvTime; // We begin inserting the TextViews after this view
+        Map<CPU, TextView> tvByCpu = new HashMap<>();
         for (CPU cpu : cpus) {
             // Create label text view
             TextView tvCpuIdentifier = new TextView(this);
@@ -80,46 +169,7 @@ public class MainActivity extends AppCompatActivity {
             prevId = tvCpuIdentifier.getId();
             tvByCpu.put(cpu, tvCpuFrequency);
         }
-
-
-        Thread monitoringThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final TextView tvTemperature = findViewById(R.id.tvTemperature);
-                final TextView tvTime = findViewById(R.id.tvTime);
-
-
-                while (true) {
-                    for (CPU cpu : cpus) {
-                        try {
-                            cpu.updateFrequency();
-                        } catch (IOException e) {
-                            // TODO
-                            e.printStackTrace();
-                        }
-                    }
-
-                    // Can't touch views from separate thread
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            for (Map.Entry<CPU, TextView> tvForCpu : tvByCpu.entrySet()) {
-                                tvForCpu.getValue().setText(String.valueOf(tvForCpu.getKey().getLastFrequency()));
-                            }
-
-                            tvTemperature.setText(readFile(TEMPERATURE_FILE_PATH));
-                            tvTime.setText(new Date().toString());
-                        }
-                    });
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
-            }
-        });
-        monitoringThread.start();
+        return tvByCpu;
     }
 
     private String readFile(String filePath) {
@@ -133,7 +183,31 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    private List<CPU> getCpus() {
+    private static List<ThermalZone> getThermalZones() {
+        File thermalZonesFolder = new File("/sys/class/thermal");
+
+        File[] thermalZoneFolders = thermalZonesFolder.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                String lcName = name.toLowerCase();
+                return lcName.matches("(thermal_zone)[0-9]+");
+            }
+        });
+
+        List<ThermalZone> thermalZones = new ArrayList<>(thermalZoneFolders.length);
+        for (File folder : thermalZoneFolders) {
+            try {
+                thermalZones.add(new ThermalZone(folder));
+            } catch (IOException e) {
+                // TODO
+                e.printStackTrace();
+            }
+        }
+
+        return thermalZones;
+    }
+
+    private static List<CPU> getCpus() {
         File cpusFolder = new File("/sys/devices/system/cpu");
 
         File[] cpuFolders = cpusFolder.listFiles(new FilenameFilter() {
