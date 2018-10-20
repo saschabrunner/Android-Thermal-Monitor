@@ -62,4 +62,9 @@ public class ThermalZone {
     public int getLastTemperature() {
         return lastTemperature;
     }
+
+    @Override
+    public String toString() {
+        return "Zone " + this.getId() + " (" + this.getType() + "): " + this.getLastTemperature();
+    }
 }

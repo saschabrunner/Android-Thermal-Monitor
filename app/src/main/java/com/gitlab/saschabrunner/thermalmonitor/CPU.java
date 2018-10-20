@@ -46,4 +46,9 @@ public class CPU {
     public int getLastFrequency() {
         return lastFrequency;
     }
+
+    @Override
+    public String toString() {
+        return "CPU" + this.getId() + ": " + this.getLastFrequency() + "KHz";
+    }
 }
