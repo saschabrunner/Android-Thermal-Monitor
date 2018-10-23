@@ -6,27 +6,40 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    private boolean thermalMonitoringEnabled = true;
+    private boolean cpuFreqMonitoringEnabled = true;
+
+    private List<ThermalZone> thermalZones;
+    private List<CPU> cpus;
+
+    private ArrayAdapter<Object> listAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final List<ThermalZone> thermalZones = getThermalZones();
-        final List<CPU> cpus = getCpus();
+        checkMonitoringAvailable();
 
         List<Object> listContents = new ArrayList<>();
-        listContents.addAll(thermalZones);
-        listContents.addAll(cpus);
 
-        final ArrayAdapter listAdapter = new ArrayAdapter<>(this, R.layout.simple_text_view, listContents);
+        if (thermalMonitoringEnabled) {
+            thermalZones = ThermalZone.getThermalZones();
+            listContents.addAll(thermalZones);
+        }
+
+        if (cpuFreqMonitoringEnabled) {
+            cpus = CPU.getCpus();
+            listContents.addAll(cpus);
+        }
+
+        listAdapter = new ArrayAdapter<>(this, R.layout.simple_text_view, listContents);
         ListView listView = findViewById(R.id.listView);
         listView.setAdapter(listAdapter);
 
@@ -36,22 +49,12 @@ public class MainActivity extends AppCompatActivity {
                 final TextView tvTime = findViewById(R.id.tvTime);
 
                 while (true) {
-                    for (ThermalZone thermalZone : thermalZones) {
-                        try {
-                            thermalZone.updateTemperature();
-                        } catch (IOException e) {
-                            // TODO
-                            e.printStackTrace();
-                        }
+                    if (thermalMonitoringEnabled) {
+                        updateThermalZones();
                     }
 
-                    for (CPU cpu : cpus) {
-                        try {
-                            cpu.update();
-                        } catch (IOException e) {
-                            // TODO
-                            e.printStackTrace();
-                        }
+                    if (cpuFreqMonitoringEnabled) {
+                        updateCpus();
                     }
 
                     // Can't touch views from separate thread
@@ -70,50 +73,43 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
+
+            private void updateThermalZones() {
+                for (ThermalZone thermalZone : thermalZones) {
+                    try {
+                        thermalZone.updateTemperature();
+                    } catch (IOException e) {
+                        // TODO
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            private void updateCpus() {
+                for (CPU cpu : cpus) {
+                    try {
+                        cpu.update();
+                    } catch (IOException e) {
+                        // TODO
+                        e.printStackTrace();
+                    }
+                }
+            }
         });
         monitoringThread.start();
     }
 
-    private static List<ThermalZone> getThermalZones() {
-        File thermalZonesFolder = new File("/sys/class/thermal");
-
-        File[] thermalZoneFolders = thermalZonesFolder.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                String lcName = name.toLowerCase();
-                return lcName.matches("(thermal_zone)[0-9]+");
-            }
-        });
-
-        List<ThermalZone> thermalZones = new ArrayList<>(thermalZoneFolders.length);
-        for (File folder : thermalZoneFolders) {
-            try {
-                thermalZones.add(new ThermalZone(folder));
-            } catch (IOException e) {
-                // TODO
-                e.printStackTrace();
-            }
+    private void checkMonitoringAvailable() {
+        int thermalMonitoringAvailable = ThermalZone.checkMonitoringAvailable();
+        if (CPU.FAILURE_REASON_OK != thermalMonitoringAvailable) {
+            // TODO: Show message
+            thermalMonitoringEnabled = false;
         }
 
-        return thermalZones;
-    }
-
-    private static List<CPU> getCpus() {
-        File cpusFolder = new File("/sys/devices/system/cpu");
-
-        File[] cpuFolders = cpusFolder.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                String lcName = name.toLowerCase();
-                return lcName.matches("(cpu)[0-9]+");
-            }
-        });
-
-        List<CPU> cpus = new ArrayList<>(cpuFolders.length);
-        for (File folder : cpuFolders) {
-            cpus.add(new CPU(folder));
+        int cpuFreqMonitoringAvailable = CPU.checkMonitoringAvailable();
+        if (CPU.FAILURE_REASON_OK != cpuFreqMonitoringAvailable) {
+            // TODO: Show message
+            cpuFreqMonitoringEnabled = false;
         }
-
-        return cpus;
     }
 }
