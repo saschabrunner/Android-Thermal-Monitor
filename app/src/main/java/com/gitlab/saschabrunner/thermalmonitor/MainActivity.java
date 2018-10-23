@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
                     for (CPU cpu : cpus) {
                         try {
-                            cpu.updateFrequency();
+                            cpu.update();
                         } catch (IOException e) {
                             // TODO
                             e.printStackTrace();
