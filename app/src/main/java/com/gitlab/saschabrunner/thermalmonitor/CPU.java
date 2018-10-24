@@ -36,34 +36,34 @@ public class CPU {
     public static final int FAILURE_REASON_DIR_EMPTY = 2;
     public static final int FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION = 3;
 
-    private File folder;
+    private File directory;
 
     @STATE
     private int lastState;
     private int lastFrequency;
 
-    private CPU(File sysfsFolder) {
-        if (isValidSysfsFolder(sysfsFolder)) {
-            this.folder = sysfsFolder;
+    private CPU(File sysfsDirectory) {
+        if (isValidSysfsDirectory(sysfsDirectory)) {
+            this.directory = sysfsDirectory;
         } else {
             throw new IllegalArgumentException("Passed file object does not point to CPU in sysfs");
         }
     }
 
-    private boolean isValidSysfsFolder(File sysfsFolder) {
+    private boolean isValidSysfsDirectory(File sysfsDirectory) {
         // Path must be "/sys/devices/system/cpu/cpu#" where # is one or more numbers
-        return sysfsFolder
+        return sysfsDirectory
                 .getAbsolutePath()
                 .toLowerCase()
                 .matches("(/sys/devices/system/cpu/cpu)[0-9]+$");
     }
 
     private String getOnlineStateFilePath() {
-        return getOnlineStateFilePath(folder.getAbsolutePath());
+        return getOnlineStateFilePath(directory.getAbsolutePath());
     }
 
     private String getCurFrequencyFilePath() {
-        return getCurFrequencyFilePath(folder.getAbsolutePath());
+        return getCurFrequencyFilePath(directory.getAbsolutePath());
     }
 
     private void updateState() throws IOException {
@@ -106,7 +106,7 @@ public class CPU {
     }
 
     public int getId() {
-        String path = folder.getAbsolutePath();
+        String path = directory.getAbsolutePath();
         String cpuId = path.replace("/sys/devices/system/cpu/cpu", "");
         return Integer.parseInt(cpuId);
     }

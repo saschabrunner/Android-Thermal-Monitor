@@ -25,23 +25,23 @@ public class ThermalZone {
     public static final int FAILURE_REASON_TYPE_NO_PERMISSION = 3;
     public static final int FAILURE_REASON_TEMP_NO_PERMISSION = 4;
 
-    private File folder;
+    private File directory;
     private String type;
 
     private int lastTemperature;
 
-    private ThermalZone(File sysfsFolder) throws IOException {
-        if (isValidSysfsFolder(sysfsFolder)) {
-            this.folder = sysfsFolder;
+    private ThermalZone(File sysfsDirectory) throws IOException {
+        if (isValidSysfsDirectory(sysfsDirectory)) {
+            this.directory = sysfsDirectory;
             this.type = readType();
         } else {
             throw new IllegalArgumentException("Passed file object does not point to thermal zone in sysfs");
         }
     }
 
-    private boolean isValidSysfsFolder(File sysfsFolder) {
+    private boolean isValidSysfsDirectory(File sysfsDirectory) {
         // Path must be "/sys/class/thermal/thermal_zone#" where # is one or more numbers
-        return sysfsFolder
+        return sysfsDirectory
                 .getAbsolutePath()
                 .toLowerCase()
                 .matches("(/sys/class/thermal/thermal_zone)[0-9]+$");
@@ -54,15 +54,15 @@ public class ThermalZone {
     }
 
     private String getTypeFilePath() {
-        return getTypeFilePath(folder.getAbsolutePath());
+        return getTypeFilePath(directory.getAbsolutePath());
     }
 
     private String getTemperatureFilePath() {
-        return getTemperatureFilePath(folder.getAbsolutePath());
+        return getTemperatureFilePath(directory.getAbsolutePath());
     }
 
     public int getId() {
-        String path = folder.getAbsolutePath();
+        String path = directory.getAbsolutePath();
         String thermalZoneId = path.replace("/sys/class/thermal/thermal_zone", "");
         return Integer.parseInt(thermalZoneId);
     }
