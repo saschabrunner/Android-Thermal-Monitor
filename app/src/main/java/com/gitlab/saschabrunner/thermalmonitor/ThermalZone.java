@@ -96,7 +96,7 @@ public class ThermalZone {
 
         // Check if dirs for thermal zones are present
         File[] thermalZoneDirs = filterThermalZones(thermalZonesDir);
-        if (thermalZoneDirs.length == 0) {
+        if (thermalZoneDirs == null || thermalZoneDirs.length == 0) {
             return FAILURE_REASON_DIR_EMPTY;
         }
 

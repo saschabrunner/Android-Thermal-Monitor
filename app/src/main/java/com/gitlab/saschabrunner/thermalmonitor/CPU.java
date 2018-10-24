@@ -148,7 +148,7 @@ public class CPU {
 
         // Check if dirs for CPU cores are present
         File[] cpuDirs = filterCpus(cpusDir);
-        if (cpuDirs.length == 0) {
+        if (cpuDirs == null || cpuDirs.length == 0) {
             return FAILURE_REASON_DIR_EMPTY;
         }
 
