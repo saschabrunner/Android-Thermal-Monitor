@@ -14,14 +14,14 @@ import java.util.List;
 
 public class ThermalZone {
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_DIR_EMPTY,
+    @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_NO_THERMAL_ZONES,
             FAILURE_REASON_TYPE_NO_PERMISSION, FAILURE_REASON_TEMP_NO_PERMISSION})
     public @interface FAILURE_REASON {
     }
 
     public static final int FAILURE_REASON_OK = 0;
     public static final int FAILURE_REASON_DIR_NOT_EXISTS = 1;
-    public static final int FAILURE_REASON_DIR_EMPTY = 2;
+    public static final int FAILURE_REASON_NO_THERMAL_ZONES = 2;
     public static final int FAILURE_REASON_TYPE_NO_PERMISSION = 3;
     public static final int FAILURE_REASON_TEMP_NO_PERMISSION = 4;
 
@@ -97,7 +97,7 @@ public class ThermalZone {
         // Check if dirs for thermal zones are present
         File[] thermalZoneDirs = filterThermalZones(thermalZonesDir);
         if (thermalZoneDirs == null || thermalZoneDirs.length == 0) {
-            return FAILURE_REASON_DIR_EMPTY;
+            return FAILURE_REASON_NO_THERMAL_ZONES;
         }
 
         // Check if required files are accessible for every thermal zone
