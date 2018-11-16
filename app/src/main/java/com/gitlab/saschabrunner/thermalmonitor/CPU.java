@@ -1,6 +1,6 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
 import android.util.Log;
 
 import java.io.BufferedReader;
