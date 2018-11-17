@@ -1,9 +1,10 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.DialogInterface;
+import android.os.Build;
 import android.os.Bundle;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -12,6 +13,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 public class MainActivity extends AppCompatActivity {
     private boolean thermalMonitoringEnabled = true;
@@ -26,6 +32,27 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Create notification channel if needed
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel =
+                    new NotificationChannel(Constants.NOTIFICATION_CHANNEL_ID_DEFAULT,
+                            "Default", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("TODO");
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        // Build initial notification
+        final NotificationCompat.BigTextStyle notificationStyle = new NotificationCompat.BigTextStyle();
+        final NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID_DEFAULT)
+                        .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                        .setOnlyAlertOnce(true)
+                        .setOngoing(true)
+                        .setStyle(notificationStyle);
+        final NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
 
         checkMonitoringAvailable();
 
@@ -51,13 +78,27 @@ public class MainActivity extends AppCompatActivity {
                 final TextView tvTime = findViewById(R.id.tvTime);
 
                 while (true) {
+                    StringBuilder notificationString = new StringBuilder();
                     if (thermalMonitoringEnabled) {
                         updateThermalZones();
+                        for (ThermalZone thermalZone : thermalZones) {
+                            notificationString.append(thermalZone.toString()).append("\n");
+                        }
                     }
 
                     if (cpuFreqMonitoringEnabled) {
                         updateCpus();
+                        for (CPU cpu : cpus) {
+                            notificationString.append(cpu.toString()).append("\n");
+                        }
                     }
+
+
+                    // Update notification
+                    notificationStyle.bigText(notificationString.toString());
+                    notificationManager.notify(
+                            Constants.NOTIFICATION_ID_MONITOR,
+                            notificationBuilder.build());
 
                     // Can't touch views from separate thread
                     runOnUiThread(new Runnable() {
