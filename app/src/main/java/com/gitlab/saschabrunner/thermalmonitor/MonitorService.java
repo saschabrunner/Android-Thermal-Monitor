@@ -50,6 +50,10 @@ public class MonitorService extends Service {
                         .setStyle(notificationBigTextStyle);
         notificationManager = NotificationManagerCompat.from(this);
 
+        // Set the service to a foreground service
+        startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
+
+        // Initialize monitoring modules
         checkMonitoringAvailable();
 
         if (thermalMonitoringEnabled) {
