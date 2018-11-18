@@ -1,0 +1,44 @@
+package com.gitlab.saschabrunner.thermalmonitor;
+
+import java.io.IOException;
+import java.util.List;
+
+public class ThermalMonitor implements Runnable {
+    private MonitorService monitorService;
+    private List<ThermalZone> thermalZones;
+
+    public ThermalMonitor(MonitorService monitorService) {
+        this.monitorService = monitorService;
+        this.thermalZones = ThermalZone.getThermalZones();
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            updateThermalZones();
+
+            StringBuilder text = new StringBuilder();
+            for (ThermalZone thermalZone : thermalZones) {
+                text.append(thermalZone.toString()).append("\n");
+            }
+            monitorService.setNotificationText(text.toString(), 1);
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+    }
+
+    private void updateThermalZones() {
+        for (ThermalZone thermalZone : thermalZones) {
+            try {
+                thermalZone.updateTemperature();
+            } catch (IOException e) {
+                // TODO
+                e.printStackTrace();
+            }
+        }
+    }
+}
