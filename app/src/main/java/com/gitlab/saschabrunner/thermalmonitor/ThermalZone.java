@@ -1,7 +1,5 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
-import androidx.annotation.IntDef;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -11,6 +9,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
+
+import androidx.annotation.IntDef;
 
 public class ThermalZone {
     @Retention(RetentionPolicy.SOURCE)
@@ -87,6 +87,7 @@ public class ThermalZone {
         return "Zone " + this.getId() + " (" + this.getType() + "): " + this.getLastTemperature();
     }
 
+    @FAILURE_REASON
     public static int checkMonitoringAvailable() {
         // Check if dir is present
         File thermalZonesDir = new File("/sys/class/thermal");
