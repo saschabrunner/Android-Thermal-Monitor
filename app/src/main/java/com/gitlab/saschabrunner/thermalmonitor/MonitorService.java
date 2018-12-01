@@ -3,7 +3,9 @@ package com.gitlab.saschabrunner.thermalmonitor;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
 
@@ -18,6 +20,7 @@ public class MonitorService extends Service {
     private boolean thermalMonitoringEnabled = true;
     private boolean cpuFreqMonitoringEnabled = true;
 
+    private BroadcastReceiver powerEventReceiver;
     private List<Thread> monitoringThreads = new ArrayList<>();
 
     private String[] texts = new String[2];
@@ -32,6 +35,7 @@ public class MonitorService extends Service {
         // Set the service to a foreground service
         startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
 
+        initBroadcastReceiver();
         initMonitoring();
     }
 
@@ -56,6 +60,14 @@ public class MonitorService extends Service {
                         .setOngoing(true)
                         .setStyle(notificationBigTextStyle);
         notificationManager = NotificationManagerCompat.from(this);
+    }
+
+    private void initBroadcastReceiver() {
+        powerEventReceiver = new PowerEventReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        this.registerReceiver(powerEventReceiver, filter);
     }
 
     private void initMonitoring() {
@@ -92,6 +104,10 @@ public class MonitorService extends Service {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void deinitBroadcastReceiver() {
+        unregisterReceiver(powerEventReceiver);
     }
 
     @Nullable
