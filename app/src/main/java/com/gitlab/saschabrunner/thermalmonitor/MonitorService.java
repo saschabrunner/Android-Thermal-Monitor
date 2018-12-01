@@ -11,12 +11,20 @@ import android.os.IBinder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 public class MonitorService extends Service {
+    private Lock mutex = new ReentrantLock();
+    private Condition notPaused = mutex.newCondition();
+    private boolean monitoringPaused = true;
+    private boolean monitoringRunning = true;
+
     private boolean thermalMonitoringEnabled = true;
     private boolean cpuFreqMonitoringEnabled = true;
 
@@ -71,8 +79,8 @@ public class MonitorService extends Service {
     }
 
     private void initMonitoring() {
-        // Initialize monitoring modules
         checkMonitoringAvailable();
+        continueMonitoring();
 
         if (thermalMonitoringEnabled) {
             ThermalMonitor thermalMonitor = new ThermalMonitor(this);
@@ -96,18 +104,25 @@ public class MonitorService extends Service {
 
     @Override
     public void onDestroy() {
-        for (Thread monitoringThread : monitoringThreads) {
-            monitoringThread.interrupt();
-            try {
-                monitoringThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        deinitBroadcastReceiver();
+        deinitMonitoring();
     }
 
     private void deinitBroadcastReceiver() {
         unregisterReceiver(powerEventReceiver);
+    }
+
+    private void deinitMonitoring() {
+        mutex.lock();
+
+        try {
+            monitoringRunning = false;
+            for(Thread monitoringThread : monitoringThreads) {
+                monitoringThread.interrupt();
+            }
+        } finally {
+            mutex.unlock();
+        }
     }
 
     @Nullable
@@ -128,6 +143,24 @@ public class MonitorService extends Service {
         }
     }
 
+    private void pauseMonitoring() {
+        mutex.lock();
+        try {
+            monitoringPaused = true;
+        } finally {
+            mutex.unlock();
+        }
+    }
+
+    private void continueMonitoring() {
+        mutex.lock();
+        try {
+            monitoringPaused = false;
+        } finally {
+            mutex.unlock();
+        }
+    }
+
     public void setNotificationText(String text, int i) {
         texts[i] = text;
         String newNotificationText = texts[0] + texts[1];
@@ -137,5 +170,43 @@ public class MonitorService extends Service {
         notificationManager.notify(
                 Constants.NOTIFICATION_ID_MONITOR,
                 notificationBuilder.build());
+    }
+
+    /**
+     * Called by specific monitor thread to check if it should pause.
+     * @return true, when the monitoring service is paused.
+     */
+    public boolean isMonitoringPaused() {
+        mutex.lock();
+        try {
+            return monitoringPaused;
+        } finally {
+            mutex.unlock();
+        }
+    }
+
+    /**
+     * If the monitoring service is paused, this method will block until the service is continued.
+     */
+    public void awaitNotPaused() {
+        mutex.lock();
+        try {
+            if (isMonitoringPaused()) {
+                notPaused.await();
+            }
+        } catch (InterruptedException e) {
+           // Nothing to do
+        } finally {
+            mutex.unlock();
+        }
+    }
+
+    public boolean isMonitoringRunning() {
+        mutex.lock();
+        try {
+            return monitoringRunning;
+        } finally {
+            mutex.unlock();
+        }
     }
 }

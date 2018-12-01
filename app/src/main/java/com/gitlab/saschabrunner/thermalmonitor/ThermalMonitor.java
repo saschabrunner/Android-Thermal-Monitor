@@ -1,9 +1,13 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.List;
 
 public class ThermalMonitor implements Runnable {
+    private static final String TAG = "ThermalMonitor";
+
     private MonitorService monitorService;
     private List<ThermalZone> thermalZones;
 
@@ -14,7 +18,9 @@ public class ThermalMonitor implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
+        while (monitorService.isMonitoringRunning()) {
+            monitorService.awaitNotPaused();
+
             updateThermalZones();
 
             StringBuilder text = new StringBuilder();
@@ -26,7 +32,11 @@ public class ThermalMonitor implements Runnable {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                return;
+                if (monitorService.isMonitoringRunning()) {
+                    // No interrupt should happen except when monitor service quits
+                    Log.e(TAG, "Unexcpected Interrupt received", e);
+                    return;
+                }
             }
         }
     }

@@ -1,9 +1,13 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.List;
 
 public class CPUFreqMonitor implements Runnable {
+    private static final String TAG = "CPUFreqMonitor";
+
     private MonitorService monitorService;
     private List<CPU> cpus;
 
@@ -14,7 +18,9 @@ public class CPUFreqMonitor implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
+        while (monitorService.isMonitoringRunning()) {
+            monitorService.awaitNotPaused();
+
             updateCpus();
 
             StringBuilder text = new StringBuilder();
@@ -26,7 +32,11 @@ public class CPUFreqMonitor implements Runnable {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                return;
+                if (monitorService.isMonitoringRunning()) {
+                    // No interrupt should happen except when monitor service quits
+                    Log.e(TAG, "Unexcpected Interrupt received", e);
+                    return;
+                }
             }
         }
     }
