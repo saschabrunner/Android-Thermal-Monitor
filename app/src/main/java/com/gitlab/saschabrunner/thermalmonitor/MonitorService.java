@@ -27,6 +27,15 @@ public class MonitorService extends Service {
 
     @Override
     public void onCreate() {
+        initNotification();
+
+        // Set the service to a foreground service
+        startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
+
+        initMonitoring();
+    }
+
+    private void initNotification() {
         // Create notification channel if needed
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel =
@@ -47,10 +56,9 @@ public class MonitorService extends Service {
                         .setOngoing(true)
                         .setStyle(notificationBigTextStyle);
         notificationManager = NotificationManagerCompat.from(this);
+    }
 
-        // Set the service to a foreground service
-        startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
-
+    private void initMonitoring() {
         // Initialize monitoring modules
         checkMonitoringAvailable();
 
