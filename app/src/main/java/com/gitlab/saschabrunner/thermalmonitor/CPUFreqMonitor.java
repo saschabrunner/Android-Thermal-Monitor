@@ -20,6 +20,7 @@ public class CPUFreqMonitor implements Runnable {
     public void run() {
         while (monitorService.isMonitoringRunning()) {
             monitorService.awaitNotPaused();
+            Log.v(TAG, "CPUFreqMonitor update");
 
             updateCpus();
 

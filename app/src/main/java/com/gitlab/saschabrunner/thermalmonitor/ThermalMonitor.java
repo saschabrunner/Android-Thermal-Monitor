@@ -20,6 +20,7 @@ public class ThermalMonitor implements Runnable {
     public void run() {
         while (monitorService.isMonitoringRunning()) {
             monitorService.awaitNotPaused();
+            Log.v(TAG, "ThermalMonitor update");
 
             updateThermalZones();
 

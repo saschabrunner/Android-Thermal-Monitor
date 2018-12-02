@@ -4,10 +4,12 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -156,6 +158,7 @@ public class MonitorService extends Service {
         mutex.lock();
         try {
             monitoringPaused = false;
+            notPaused.signalAll();
         } finally {
             mutex.unlock();
         }
@@ -207,6 +210,34 @@ public class MonitorService extends Service {
             return monitoringRunning;
         } finally {
             mutex.unlock();
+        }
+    }
+
+    private class PowerEventReceiver extends BroadcastReceiver {
+        private static final String TAG = "PowerEventReceiver";
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction() != null) {
+                switch(intent.getAction()) {
+                    case Intent.ACTION_SCREEN_OFF:
+                        pauseMonitoring(context);
+                        break;
+                    case Intent.ACTION_SCREEN_ON:
+                        continueMonitoring(context);
+                        break;
+                }
+            }
+        }
+
+        private void pauseMonitoring(Context context) {
+            Log.v(TAG, "PAUSE MONITORING");
+            MonitorService.this.pauseMonitoring();
+        }
+
+        private void continueMonitoring(Context context) {
+            Log.v(TAG, "CONTINUE MONITORING");
+            MonitorService.this.continueMonitoring();
         }
     }
 }
