@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -14,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 
 public class CPU {
     private static final String TAG = "CPU";
@@ -120,6 +120,7 @@ public class CPU {
         return lastFrequency;
     }
 
+    @NonNull
     @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
@@ -184,12 +185,9 @@ public class CPU {
     }
 
     private static File[] filterCpus(File cpusDir) {
-        return cpusDir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                String lcName = name.toLowerCase();
-                return lcName.matches("(cpu)[0-9]+");
-            }
+        return cpusDir.listFiles((dir, name) -> {
+            String lcName = name.toLowerCase();
+            return lcName.matches("(cpu)[0-9]+");
         });
     }
 

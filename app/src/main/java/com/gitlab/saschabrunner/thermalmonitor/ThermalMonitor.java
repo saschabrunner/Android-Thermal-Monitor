@@ -8,8 +8,8 @@ import java.util.List;
 public class ThermalMonitor implements Runnable {
     private static final String TAG = "ThermalMonitor";
 
-    private MonitorService monitorService;
-    private List<ThermalZone> thermalZones;
+    private final MonitorService monitorService;
+    private final List<ThermalZone> thermalZones;
 
     public ThermalMonitor(MonitorService monitorService) {
         this.monitorService = monitorService;

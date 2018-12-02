@@ -8,8 +8,8 @@ import java.util.List;
 public class CPUFreqMonitor implements Runnable {
     private static final String TAG = "CPUFreqMonitor";
 
-    private MonitorService monitorService;
-    private List<CPU> cpus;
+    private final MonitorService monitorService;
+    private final List<CPU> cpus;
 
     public CPUFreqMonitor(MonitorService monitorService) {
         this.monitorService = monitorService;

@@ -24,8 +24,8 @@ import androidx.core.app.NotificationManagerCompat;
 public class MonitorService extends Service {
     private static final String TAG = "MonitorService";
 
-    private Lock mutex = new ReentrantLock();
-    private Condition notPaused = mutex.newCondition();
+    private final Lock mutex = new ReentrantLock();
+    private final Condition notPaused = mutex.newCondition();
     private boolean monitoringPaused = true;
     private boolean monitoringRunning = true;
 
@@ -228,21 +228,21 @@ public class MonitorService extends Service {
             if (intent.getAction() != null) {
                 switch(intent.getAction()) {
                     case Intent.ACTION_SCREEN_OFF:
-                        pauseMonitoring(context);
+                        pauseMonitoring();
                         break;
                     case Intent.ACTION_SCREEN_ON:
-                        continueMonitoring(context);
+                        continueMonitoring();
                         break;
                 }
             }
         }
 
-        private void pauseMonitoring(Context context) {
+        private void pauseMonitoring() {
             Log.v(TAG, "PAUSE MONITORING");
             MonitorService.this.pauseMonitoring();
         }
 
-        private void continueMonitoring(Context context) {
+        private void continueMonitoring() {
             Log.v(TAG, "CONTINUE MONITORING");
             MonitorService.this.continueMonitoring();
         }

@@ -3,7 +3,6 @@ package com.gitlab.saschabrunner.thermalmonitor;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 
 public class ThermalZone {
     @Retention(RetentionPolicy.SOURCE)
@@ -82,6 +82,7 @@ public class ThermalZone {
         return lastTemperature;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "Zone " + this.getId() + " (" + this.getType() + "): " + this.getLastTemperature();
@@ -136,12 +137,9 @@ public class ThermalZone {
     }
 
     private static File[] filterThermalZones(File thermalZonesDir) {
-        return thermalZonesDir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                String lcName = name.toLowerCase();
-                return lcName.matches("(thermal_zone)[0-9]+");
-            }
+        return thermalZonesDir.listFiles((dir, name) -> {
+            String lcName = name.toLowerCase();
+            return lcName.matches("(thermal_zone)[0-9]+");
         });
     }
 
