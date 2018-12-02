@@ -1,6 +1,5 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
-import androidx.annotation.IntDef;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -13,6 +12,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
+
+import androidx.annotation.IntDef;
 
 public class CPU {
     private static final String TAG = "CPU";
@@ -88,7 +89,6 @@ public class CPU {
     }
 
     private void updateFrequency() throws IOException {
-        // TODO: Keep reader open and just reset instead?
         try (BufferedReader reader = new BufferedReader(new FileReader(getCurFrequencyFilePath()))) {
             lastFrequency = Integer.valueOf(reader.readLine());
         } catch (FileNotFoundException e) {

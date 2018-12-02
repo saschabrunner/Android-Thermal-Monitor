@@ -47,8 +47,8 @@ public class CPUFreqMonitor implements Runnable {
             try {
                 cpu.update();
             } catch (IOException e) {
-                // TODO
                 e.printStackTrace();
+                return;
             }
         }
     }

@@ -47,8 +47,8 @@ public class ThermalMonitor implements Runnable {
             try {
                 thermalZone.updateTemperature();
             } catch (IOException e) {
-                // TODO
                 e.printStackTrace();
+                return;
             }
         }
     }

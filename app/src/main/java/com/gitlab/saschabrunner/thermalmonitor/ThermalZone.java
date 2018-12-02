@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import androidx.annotation.IntDef;
@@ -68,7 +69,6 @@ public class ThermalZone {
     }
 
     public void updateTemperature() throws IOException {
-        // TODO: Keep reader open and just reset instead?
         try (BufferedReader reader = new BufferedReader(new FileReader(getTemperatureFilePath()))) {
             lastTemperature = Integer.valueOf(reader.readLine());
         }
@@ -127,8 +127,8 @@ public class ThermalZone {
             try {
                 thermalZones.add(new ThermalZone(dir));
             } catch (IOException e) {
-                // TODO
                 e.printStackTrace();
+                return Collections.emptyList();
             }
         }
 

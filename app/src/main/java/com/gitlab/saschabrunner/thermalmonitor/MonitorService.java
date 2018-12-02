@@ -22,6 +22,8 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 public class MonitorService extends Service {
+    private static final String TAG = "MonitorService";
+
     private Lock mutex = new ReentrantLock();
     private Condition notPaused = mutex.newCondition();
     private boolean monitoringPaused = true;
@@ -40,6 +42,7 @@ public class MonitorService extends Service {
 
     @Override
     public void onCreate() {
+        Log.v(TAG, "onCreate");
         initNotification();
 
         // Set the service to a foreground service
@@ -101,11 +104,13 @@ public class MonitorService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.v(TAG, "onStartComand (startId=" + startId);
         return Service.START_STICKY;
     }
 
     @Override
     public void onDestroy() {
+        Log.v(TAG, "onDestroy");
         deinitBroadcastReceiver();
         deinitMonitoring();
     }
@@ -218,6 +223,8 @@ public class MonitorService extends Service {
 
         @Override
         public void onReceive(Context context, Intent intent) {
+            Log.v(TAG, "Received " + intent.getAction());
+
             if (intent.getAction() != null) {
                 switch(intent.getAction()) {
                     case Intent.ACTION_SCREEN_OFF:
