@@ -89,12 +89,12 @@ public class MonitorService extends Service {
 
         if (thermalMonitoringEnabled) {
             ThermalMonitor thermalMonitor = new ThermalMonitor(this);
-            monitoringThreads.add(new Thread(thermalMonitor));
+            monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         }
 
         if (cpuFreqMonitoringEnabled) {
             CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
-            monitoringThreads.add(new Thread(cpuFreqMonitor));
+            monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
         }
 
         for (Thread monitoringThread : monitoringThreads) {
