@@ -5,7 +5,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.List;
 
-public class CPUFreqMonitor implements Runnable {
+public class CPUFreqMonitor implements Runnable, Monitor {
     private static final String TAG = "CPUFreqMonitor";
 
     private final MonitorService monitorService;
@@ -14,6 +14,16 @@ public class CPUFreqMonitor implements Runnable {
     public CPUFreqMonitor(MonitorService monitorService) {
         this.monitorService = monitorService;
         this.cpus = CPU.getCpus();
+    }
+
+    public void deinit() {
+        for (CPU cpu : cpus) {
+            try {
+                cpu.deinit();
+            } catch (IOException e) {
+                Log.e(TAG, "Couldn't deinit CPU", e);
+            }
+        }
     }
 
     @Override

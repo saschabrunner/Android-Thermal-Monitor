@@ -1,15 +1,22 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
+import android.os.Build;
 import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import androidx.annotation.IntDef;
@@ -38,16 +45,27 @@ public class CPU {
     public static final int FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION = 3;
 
     private File directory;
+    private FileChannel stateFileChannel;
+
+    private ByteBuffer buf = ByteBuffer.allocate(20);
 
     @STATE
     private int lastState;
     private int lastFrequency;
 
-    private CPU(File sysfsDirectory) {
+    private CPU(File sysfsDirectory) throws IOException {
         if (isValidSysfsDirectory(sysfsDirectory)) {
             this.directory = sysfsDirectory;
         } else {
             throw new IllegalArgumentException("Passed file object does not point to CPU in sysfs");
+        }
+
+        initStateFileChannel();
+    }
+
+    public void deinit() throws IOException {
+        if (stateFileChannel != null) {
+            stateFileChannel.close();
         }
     }
 
@@ -59,6 +77,23 @@ public class CPU {
                 .matches("(/sys/devices/system/cpu/cpu)[0-9]+$");
     }
 
+    private void initStateFileChannel() throws IOException {
+        File onlineStateFile = new File(getOnlineStateFilePath());
+        if (!onlineStateFile.exists()) {
+            Log.w(TAG, "No online state file found, using alternative method");
+            return;
+        }
+
+        Log.v(TAG, "Online state file found");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            stateFileChannel = FileChannel.open(Paths.get(getOnlineStateFilePath()),
+                    StandardOpenOption.READ);
+        } else {
+            FileInputStream stStream = new FileInputStream(getOnlineStateFilePath());
+            stateFileChannel = stStream.getChannel();
+        }
+    }
+
     private String getOnlineStateFilePath() {
         return getOnlineStateFilePath(directory.getAbsolutePath());
     }
@@ -68,15 +103,22 @@ public class CPU {
     }
 
     private void updateState() throws IOException {
-        File onlineStateFile = new File(getOnlineStateFilePath());
-        if (onlineStateFile.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(onlineStateFile))) {
-                String state = reader.readLine();
-                if ("0".equals(state)) {
-                    lastState = STATE_OFFLINE;
-                } else {
-                    lastState = STATE_ONLINE;
-                }
+        if (stateFileChannel != null) {
+            // Reset file channel and buffer to beginning
+            stateFileChannel.position(0);
+            buf.position(0);
+
+            // Read current frequency
+            int length = stateFileChannel.read(buf);
+
+            // Parse integer value
+            String state = new String(buf.array(), 0, length - 1);
+
+            // Determine state
+            if ("0".equals(state)) {
+                lastState = STATE_OFFLINE;
+            } else {
+                lastState = STATE_ONLINE;
             }
         } else {
             File curFrequencyFile = new File(getCurFrequencyFilePath());
@@ -101,6 +143,7 @@ public class CPU {
         updateState();
 
         if (lastState != STATE_OFFLINE) {
+            Log.v(TAG, "CPU is online");
             updateFrequency();
         }
     }
@@ -178,7 +221,12 @@ public class CPU {
 
         List<CPU> cpus = new ArrayList<>(cpuDirs.length);
         for (File dir : cpuDirs) {
-            cpus.add(new CPU(dir));
+            try {
+                cpus.add(new CPU(dir));
+            } catch (IOException e) {
+                e.printStackTrace();
+                return Collections.emptyList();
+            }
         }
 
         return cpus;
