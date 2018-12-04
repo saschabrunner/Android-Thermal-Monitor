@@ -1,11 +1,18 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
+import android.os.Build;
+
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +36,9 @@ public class ThermalZone {
     private File directory;
     private String type;
 
+    private FileChannel temperatureFileChannel;
+    private ByteBuffer buf = ByteBuffer.allocate(10);
+
     private int lastTemperature;
 
     private ThermalZone(File sysfsDirectory) throws IOException {
@@ -38,6 +48,14 @@ public class ThermalZone {
         } else {
             throw new IllegalArgumentException("Passed file object does not point to thermal zone in sysfs");
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            temperatureFileChannel = FileChannel.open(Paths.get(getTemperatureFilePath()), StandardOpenOption.READ);
+        } else {
+            FileInputStream stream = new FileInputStream(getTemperatureFilePath());
+            temperatureFileChannel = stream.getChannel();
+        }
+
     }
 
     private boolean isValidSysfsDirectory(File sysfsDirectory) {
@@ -69,9 +87,16 @@ public class ThermalZone {
     }
 
     public void updateTemperature() throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(getTemperatureFilePath()))) {
-            lastTemperature = Integer.valueOf(reader.readLine());
-        }
+        // Reset file channel and buffer to beginning
+        temperatureFileChannel.position(0);
+        buf.position(0);
+
+        // Read current temperature
+        int length = temperatureFileChannel.read(buf);
+
+        // Parse integer value
+        lastTemperature = Integer.valueOf(new String(buf.array(), 0, length - 1));
+
     }
 
     public String getType() {
