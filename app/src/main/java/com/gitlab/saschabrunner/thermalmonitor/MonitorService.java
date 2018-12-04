@@ -33,6 +33,7 @@ public class MonitorService extends Service {
     private boolean cpuFreqMonitoringEnabled = true;
 
     private BroadcastReceiver powerEventReceiver;
+    private List<Monitor> monitors = new ArrayList<>();
     private List<Thread> monitoringThreads = new ArrayList<>();
 
     private String[] texts = new String[2];
@@ -104,7 +105,7 @@ public class MonitorService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.v(TAG, "onStartComand (startId=" + startId);
+        Log.v(TAG, "onStartComand (startId=" + startId + ")");
         return Service.START_STICKY;
     }
 
@@ -129,6 +130,10 @@ public class MonitorService extends Service {
             }
         } finally {
             mutex.unlock();
+        }
+
+        for (Monitor monitor : monitors) {
+            monitor.deinit();
         }
     }
 

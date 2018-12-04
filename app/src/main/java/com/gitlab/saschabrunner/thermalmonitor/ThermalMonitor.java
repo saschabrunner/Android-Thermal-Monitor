@@ -5,7 +5,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.List;
 
-public class ThermalMonitor implements Runnable {
+public class ThermalMonitor implements Runnable, Monitor {
     private static final String TAG = "ThermalMonitor";
 
     private final MonitorService monitorService;
@@ -14,6 +14,16 @@ public class ThermalMonitor implements Runnable {
     public ThermalMonitor(MonitorService monitorService) {
         this.monitorService = monitorService;
         this.thermalZones = ThermalZone.getThermalZones();
+    }
+
+    public void deinit() {
+        for (ThermalZone thermalZone : thermalZones) {
+            try {
+                thermalZone.deinit();
+            } catch (IOException e) {
+                Log.e(TAG, "Couldn't deinit thermal zone", e);
+            }
+        }
     }
 
     @Override

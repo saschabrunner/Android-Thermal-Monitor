@@ -58,6 +58,10 @@ public class ThermalZone {
 
     }
 
+    public void deinit() throws IOException {
+        temperatureFileChannel.close();
+    }
+
     private boolean isValidSysfsDirectory(File sysfsDirectory) {
         // Path must be "/sys/class/thermal/thermal_zone#" where # is one or more numbers
         return sysfsDirectory
