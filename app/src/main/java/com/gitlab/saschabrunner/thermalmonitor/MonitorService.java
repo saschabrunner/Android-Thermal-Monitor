@@ -7,9 +7,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
+import android.view.WindowManager;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,16 +45,28 @@ public class MonitorService extends Service {
     private NotificationCompat.BigTextStyle notificationBigTextStyle;
     private NotificationCompat.Builder notificationBuilder;
     private NotificationManagerCompat notificationManager;
+    private TextView overlayText;
 
     @Override
     public void onCreate() {
         Log.v(TAG, "onCreate");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this,
+                        "ENABLE OVERLAY PERMISSION AND RESTART APP",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+        }
+
         initNotification();
 
         // Set the service to a foreground service
         startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
 
         initBroadcastReceiver();
+        initOverlay();
         initMonitoring();
     }
 
@@ -82,6 +99,26 @@ public class MonitorService extends Service {
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
         this.registerReceiver(powerEventReceiver, filter);
+    }
+
+    private void initOverlay() {
+        WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+
+        int type = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY :
+                WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+
+        WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                type,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                PixelFormat.TRANSLUCENT);
+
+        overlayText = new TextView(this);
+
+        windowManager.addView(overlayText, layoutParams);
     }
 
     private void initMonitoring() {
@@ -125,7 +162,7 @@ public class MonitorService extends Service {
 
         try {
             monitoringRunning = false;
-            for(Thread monitoringThread : monitoringThreads) {
+            for (Thread monitoringThread : monitoringThreads) {
                 monitoringThread.interrupt();
             }
         } finally {
@@ -183,10 +220,13 @@ public class MonitorService extends Service {
         notificationManager.notify(
                 Constants.NOTIFICATION_ID_MONITOR,
                 notificationBuilder.build());
+
+        overlayText.post(() -> overlayText.setText(newNotificationText));
     }
 
     /**
      * Called by specific monitor thread to check if it should pause.
+     *
      * @return true, when the monitoring service is paused.
      */
     public boolean isMonitoringPaused() {
@@ -208,7 +248,7 @@ public class MonitorService extends Service {
                 notPaused.await();
             }
         } catch (InterruptedException e) {
-           // Nothing to do
+            // Nothing to do
         } finally {
             mutex.unlock();
         }
@@ -231,7 +271,7 @@ public class MonitorService extends Service {
             Log.v(TAG, "Received " + intent.getAction());
 
             if (intent.getAction() != null) {
-                switch(intent.getAction()) {
+                switch (intent.getAction()) {
                     case Intent.ACTION_SCREEN_OFF:
                         pauseMonitoring();
                         break;
