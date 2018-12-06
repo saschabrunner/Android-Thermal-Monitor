@@ -38,7 +38,7 @@ public class ThermalMonitor implements Runnable, Monitor {
             for (ThermalZone thermalZone : thermalZones) {
                 text.append(thermalZone.toString()).append("\n");
             }
-            monitorService.setNotificationText(text.toString(), 1);
+            monitorService.setOverlayText(text.toString(), 1);
 
             try {
                 Thread.sleep(1000);

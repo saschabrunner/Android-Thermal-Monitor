@@ -38,7 +38,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
             for (CPU cpu : cpus) {
                 text.append(cpu.toString()).append("\n");
             }
-            monitorService.setNotificationText(text.toString(), 0);
+            monitorService.setOverlayText(text.toString(), 0);
 
             try {
                 Thread.sleep(500);

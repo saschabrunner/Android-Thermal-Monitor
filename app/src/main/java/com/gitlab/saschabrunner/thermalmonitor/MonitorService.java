@@ -24,7 +24,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 
 public class MonitorService extends Service {
     private static final String TAG = "MonitorService";
@@ -41,10 +40,9 @@ public class MonitorService extends Service {
     private List<Monitor> monitors = new ArrayList<>();
     private List<Thread> monitoringThreads = new ArrayList<>();
 
-    private String[] texts = new String[2];
-    private NotificationCompat.BigTextStyle notificationBigTextStyle;
     private NotificationCompat.Builder notificationBuilder;
-    private NotificationManagerCompat notificationManager;
+
+    private String[] texts = new String[2];
     private TextView overlayText;
 
     @Override
@@ -82,15 +80,13 @@ public class MonitorService extends Service {
         }
 
         // Build initial notification
-        notificationBigTextStyle = new NotificationCompat.BigTextStyle();
         notificationBuilder =
                 new NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID_DEFAULT)
                         .setSmallIcon(android.R.drawable.ic_dialog_alert)
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setOnlyAlertOnce(true)
                         .setOngoing(true)
-                        .setStyle(notificationBigTextStyle);
-        notificationManager = NotificationManagerCompat.from(this);
+                        .setContentTitle("Thermal Monitor Service is running");
     }
 
     private void initBroadcastReceiver() {
@@ -127,11 +123,13 @@ public class MonitorService extends Service {
 
         if (thermalMonitoringEnabled) {
             ThermalMonitor thermalMonitor = new ThermalMonitor(this);
+            monitors.add(thermalMonitor);
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         }
 
         if (cpuFreqMonitoringEnabled) {
             CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
+            monitors.add(cpuFreqMonitor);
             monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
         }
 
@@ -211,16 +209,11 @@ public class MonitorService extends Service {
         }
     }
 
-    public void setNotificationText(String text, int i) {
+    public void setOverlayText(String text, int i) {
         texts[i] = text;
         String newNotificationText = texts[0] + texts[1];
 
-        // Update notification
-        notificationBigTextStyle.bigText(newNotificationText);
-        notificationManager.notify(
-                Constants.NOTIFICATION_ID_MONITOR,
-                notificationBuilder.build());
-
+        // Update text view
         overlayText.post(() -> overlayText.setText(newNotificationText));
     }
 
