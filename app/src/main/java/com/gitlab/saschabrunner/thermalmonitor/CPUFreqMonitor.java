@@ -5,6 +5,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class CPUFreqMonitor implements Runnable, Monitor {
@@ -47,7 +48,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
             for (CPU cpu : cpus) {
                 OverlayListItem listItem = listItemByCpu.get(cpu);
                 assert listItem != null;
-                listItem.setValue(cpu.getLastFrequency() + "KHz");
+                listItem.setValue(buildCpuValueString(cpu));
                 monitorService.updateListItem(listItem);
             }
 
@@ -71,6 +72,15 @@ public class CPUFreqMonitor implements Runnable, Monitor {
                 e.printStackTrace();
                 return;
             }
+        }
+    }
+
+    private String buildCpuValueString(CPU cpu) {
+        if (cpu.getLastState() == CPU.STATE_OFFLINE) {
+            return monitorService.getString(R.string.offline);
+        } else {
+            return String.format(Locale.getDefault(), "%6.1f MHz",
+                    (double) cpu.getLastFrequency() / 1000);
         }
     }
 }
