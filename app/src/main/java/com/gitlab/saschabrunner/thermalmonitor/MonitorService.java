@@ -40,10 +40,11 @@ public class MonitorService extends Service {
     private boolean thermalMonitoringEnabled = true;
     private boolean cpuFreqMonitoringEnabled = true;
 
-    private BroadcastReceiver powerEventReceiver;
+    private PowerEventReceiver powerEventReceiver;
     private List<Monitor> monitors = new ArrayList<>();
     private List<Thread> monitoringThreads = new ArrayList<>();
 
+    private View overlayView;
     private NotificationCompat.Builder notificationBuilder;
     private OverlayListAdapter listAdapter;
 
@@ -54,8 +55,9 @@ public class MonitorService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!Settings.canDrawOverlays(this)) {
                 Toast.makeText(this,
-                        "ENABLE OVERLAY PERMISSION AND RESTART APP",
+                        "Overlay permission not enabled, open overlay settings to enable",
                         Toast.LENGTH_LONG).show();
+                stopSelf();
                 return;
             }
         }
@@ -93,10 +95,7 @@ public class MonitorService extends Service {
 
     private void initBroadcastReceiver() {
         powerEventReceiver = new PowerEventReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        this.registerReceiver(powerEventReceiver, filter);
+        powerEventReceiver.register(this);
     }
 
     private void initOverlay() {
@@ -104,6 +103,7 @@ public class MonitorService extends Service {
         final LayoutInflater layoutInflater = LayoutInflater.from(this);
         @SuppressLint("InflateParams")
         View overlayView = layoutInflater.inflate(R.layout.overlay, null);
+        this.overlayView = overlayView;
 
         // Create layout params
         WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -165,12 +165,9 @@ public class MonitorService extends Service {
     @Override
     public void onDestroy() {
         Log.v(TAG, "onDestroy");
-        deinitBroadcastReceiver();
         deinitMonitoring();
-    }
-
-    private void deinitBroadcastReceiver() {
-        unregisterReceiver(powerEventReceiver);
+        deinitOverlay();
+        deinitBroadcastReceiver();
     }
 
     private void deinitMonitoring() {
@@ -187,6 +184,19 @@ public class MonitorService extends Service {
 
         for (Monitor monitor : monitors) {
             monitor.deinit();
+        }
+    }
+
+    private void deinitOverlay() {
+        if (overlayView != null) {
+            WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+            windowManager.removeViewImmediate(overlayView);
+        }
+    }
+
+    private void deinitBroadcastReceiver() {
+        if (powerEventReceiver != null) {
+            powerEventReceiver.unregister(this);
         }
     }
 
@@ -277,6 +287,8 @@ public class MonitorService extends Service {
     private class PowerEventReceiver extends BroadcastReceiver {
         private static final String TAG = "PowerEventReceiver";
 
+        private boolean registered = false;
+
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.v(TAG, "Received " + intent.getAction());
@@ -290,6 +302,35 @@ public class MonitorService extends Service {
                         continueMonitoring();
                         break;
                 }
+            }
+        }
+
+        /**
+         * Used to avoid multiple registrations.
+         * @param context Context to register receiver on.
+         * @return result from {@link Context#registerReceiver(BroadcastReceiver, IntentFilter)}
+         * or null if already registered.
+         */
+        public Intent register(Context context) {
+            if (!registered) {
+                IntentFilter filter = new IntentFilter();
+                filter.addAction(Intent.ACTION_SCREEN_OFF);
+                filter.addAction(Intent.ACTION_SCREEN_ON);
+                Intent res = context.registerReceiver(this, filter);
+                registered = true;
+                return res;
+            }
+
+            return null;
+        }
+
+        /**
+         * Used to avoid unregistering when already unregistered.
+         * @param context Context to unregister receiver from.
+         */
+        public void unregister(Context context) {
+            if (registered) {
+                context.unregisterReceiver(this);
             }
         }
 
