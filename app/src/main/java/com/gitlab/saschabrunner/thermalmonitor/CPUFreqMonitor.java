@@ -79,7 +79,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
         if (cpu.getLastState() == CPU.STATE_OFFLINE) {
             return monitorService.getString(R.string.offline);
         } else {
-            return String.format(Locale.getDefault(), "%6.1f MHz",
+            return String.format(Locale.getDefault(), "%06.1f MHz",
                     (double) cpu.getLastFrequency() / 1000);
         }
     }
