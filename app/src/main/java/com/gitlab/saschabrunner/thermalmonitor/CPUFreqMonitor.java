@@ -3,17 +3,27 @@ package com.gitlab.saschabrunner.thermalmonitor;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CPUFreqMonitor implements Runnable, Monitor {
     private static final String TAG = "CPUFreqMonitor";
 
     private final MonitorService monitorService;
     private final List<CPU> cpus;
+    private Map<CPU, OverlayListItem> listItemByCpu;
 
     public CPUFreqMonitor(MonitorService monitorService) {
         this.monitorService = monitorService;
         this.cpus = CPU.getCpus();
+        this.listItemByCpu = new HashMap<>();
+        for (CPU cpu : cpus) {
+            OverlayListItem listItem = new OverlayListItem();
+            listItem.setLabel("CPU" + cpu.getId());
+            listItemByCpu.put(cpu, listItem);
+            monitorService.addListItem(listItem);
+        }
     }
 
     public void deinit() {
@@ -34,11 +44,12 @@ public class CPUFreqMonitor implements Runnable, Monitor {
 
             updateCpus();
 
-            StringBuilder text = new StringBuilder();
             for (CPU cpu : cpus) {
-                text.append(cpu.toString()).append("\n");
+                OverlayListItem listItem = listItemByCpu.get(cpu);
+                assert listItem != null;
+                listItem.setValue(cpu.getLastFrequency() + "KHz");
+                monitorService.updateListItem(listItem);
             }
-            monitorService.setOverlayText(text.toString(), 0);
 
             try {
                 Thread.sleep(500);

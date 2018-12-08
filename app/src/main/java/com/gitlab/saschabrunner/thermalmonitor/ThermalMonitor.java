@@ -3,17 +3,27 @@ package com.gitlab.saschabrunner.thermalmonitor;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ThermalMonitor implements Runnable, Monitor {
     private static final String TAG = "ThermalMonitor";
 
     private final MonitorService monitorService;
     private final List<ThermalZone> thermalZones;
+    private Map<ThermalZone, OverlayListItem> listItemByThermalZone;
 
     public ThermalMonitor(MonitorService monitorService) {
         this.monitorService = monitorService;
         this.thermalZones = ThermalZone.getThermalZones();
+        this.listItemByThermalZone = new HashMap<>();
+        for (ThermalZone thermalZone : thermalZones) {
+            OverlayListItem listItem = new OverlayListItem();
+            listItem.setLabel(thermalZone.getType());
+            listItemByThermalZone.put(thermalZone, listItem);
+            monitorService.addListItem(listItem);
+        }
     }
 
     public void deinit() {
@@ -34,11 +44,12 @@ public class ThermalMonitor implements Runnable, Monitor {
 
             updateThermalZones();
 
-            StringBuilder text = new StringBuilder();
             for (ThermalZone thermalZone : thermalZones) {
-                text.append(thermalZone.toString()).append("\n");
+                OverlayListItem listItem = listItemByThermalZone.get(thermalZone);
+                assert listItem != null;
+                listItem.setValue(String.valueOf(thermalZone.getLastTemperature()));
+                monitorService.updateListItem(listItem);
             }
-            monitorService.setOverlayText(text.toString(), 1);
 
             try {
                 Thread.sleep(1000);

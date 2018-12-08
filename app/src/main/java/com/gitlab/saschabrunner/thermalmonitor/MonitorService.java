@@ -1,5 +1,6 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -12,8 +13,9 @@ import android.os.Build;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.view.WindowManager;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -24,6 +26,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class MonitorService extends Service {
     private static final String TAG = "MonitorService";
@@ -41,9 +45,7 @@ public class MonitorService extends Service {
     private List<Thread> monitoringThreads = new ArrayList<>();
 
     private NotificationCompat.Builder notificationBuilder;
-
-    private String[] texts = new String[2];
-    private TextView overlayText;
+    private OverlayListAdapter listAdapter;
 
     @Override
     public void onCreate() {
@@ -98,23 +100,39 @@ public class MonitorService extends Service {
     }
 
     private void initOverlay() {
-        WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        // Inflate layout
+        final LayoutInflater layoutInflater = LayoutInflater.from(this);
+        @SuppressLint("InflateParams")
+        View overlayView = layoutInflater.inflate(R.layout.overlay, null);
 
+        // Create layout params
+        WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         int type = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY :
                 WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
 
         WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
                 type,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                         | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                 PixelFormat.TRANSLUCENT);
 
-        overlayText = new TextView(this);
+        // Add layout view
+        windowManager.addView(overlayView, layoutParams);
 
-        windowManager.addView(overlayText, layoutParams);
+        // Initialize recycler view
+        RecyclerView recyclerView = overlayView.findViewById(R.id.overlayRecyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+
+        // Disable animations (otherwise excessive ViewHolders are used in notifyItemChanged())
+        recyclerView.setItemAnimator(null);
+
+        // Set adapter on list view
+        listAdapter = new OverlayListAdapter();
+        recyclerView.setAdapter(listAdapter);
     }
 
     private void initMonitoring() {
@@ -209,12 +227,12 @@ public class MonitorService extends Service {
         }
     }
 
-    public void setOverlayText(String text, int i) {
-        texts[i] = text;
-        String newNotificationText = texts[0] + texts[1];
+    public void addListItem(OverlayListItem listItem) {
+        listAdapter.addListItem(listItem);
+    }
 
-        // Update text view
-        overlayText.post(() -> overlayText.setText(newNotificationText));
+    public void updateListItem(OverlayListItem listItem) {
+        listAdapter.updateListItem(listItem);
     }
 
     /**
