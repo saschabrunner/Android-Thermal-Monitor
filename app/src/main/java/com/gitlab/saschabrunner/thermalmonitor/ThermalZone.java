@@ -100,7 +100,6 @@ public class ThermalZone {
 
         // Parse integer value
         lastTemperature = Integer.valueOf(new String(buf.array(), 0, length - 1));
-
     }
 
     public String getType() {

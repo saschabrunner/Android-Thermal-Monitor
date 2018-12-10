@@ -1,9 +1,14 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.view.View;
+import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -15,12 +20,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         checkMonitoringAvailable();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(new Intent(this, MonitorService.class));
-        } else {
-            startService(new Intent(this, MonitorService.class));
-        }
     }
 
     private void checkMonitoringAvailable() {
@@ -71,5 +70,46 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage(message)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.cancel());
         builder.show();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void openOverlayPermissionSettings() {
+        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:" + getPackageName()));
+        startActivity(intent);
+    }
+
+    private void startService() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(new Intent(this, MonitorService.class));
+        } else {
+            startService(new Intent(this, MonitorService.class));
+        }
+    }
+
+    private void stopService() {
+        stopService(new Intent(this, MonitorService.class));
+    }
+
+    public void openOverlayPermissionSettings(View view) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            openOverlayPermissionSettings();
+        } else {
+            Toast.makeText(this, "Only available on Android 6.0 and up",
+                    Toast.LENGTH_LONG)
+                    .show();
+        }
+    }
+
+    public void startService(View view) {
+        startService();
+    }
+
+    public void stopService(View view) {
+        stopService();
+    }
+
+    public void showLicenses(View view) {
+        startActivity(new Intent(this, Licenses.class));
     }
 }

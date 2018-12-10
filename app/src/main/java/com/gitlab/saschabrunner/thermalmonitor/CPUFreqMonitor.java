@@ -3,17 +3,28 @@ package com.gitlab.saschabrunner.thermalmonitor;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class CPUFreqMonitor implements Runnable, Monitor {
     private static final String TAG = "CPUFreqMonitor";
 
     private final MonitorService monitorService;
     private final List<CPU> cpus;
+    private Map<CPU, OverlayListItem> listItemByCpu;
 
     public CPUFreqMonitor(MonitorService monitorService) {
         this.monitorService = monitorService;
         this.cpus = CPU.getCpus();
+        this.listItemByCpu = new HashMap<>();
+        for (CPU cpu : cpus) {
+            OverlayListItem listItem = new OverlayListItem();
+            listItem.setLabel("CPU" + cpu.getId());
+            listItemByCpu.put(cpu, listItem);
+            monitorService.addListItem(listItem);
+        }
     }
 
     public void deinit() {
@@ -34,11 +45,12 @@ public class CPUFreqMonitor implements Runnable, Monitor {
 
             updateCpus();
 
-            StringBuilder text = new StringBuilder();
             for (CPU cpu : cpus) {
-                text.append(cpu.toString()).append("\n");
+                OverlayListItem listItem = listItemByCpu.get(cpu);
+                assert listItem != null;
+                listItem.setValue(buildCpuValueString(cpu));
+                monitorService.updateListItem(listItem);
             }
-            monitorService.setNotificationText(text.toString(), 0);
 
             try {
                 Thread.sleep(500);
@@ -60,6 +72,15 @@ public class CPUFreqMonitor implements Runnable, Monitor {
                 e.printStackTrace();
                 return;
             }
+        }
+    }
+
+    private String buildCpuValueString(CPU cpu) {
+        if (cpu.getLastState() == CPU.STATE_OFFLINE) {
+            return monitorService.getString(R.string.offline);
+        } else {
+            return String.format(Locale.getDefault(), "%06.1f MHz",
+                    (double) cpu.getLastFrequency() / 1000);
         }
     }
 }

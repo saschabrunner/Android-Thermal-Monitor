@@ -1,5 +1,6 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -7,9 +8,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +26,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class MonitorService extends Service {
     private static final String TAG = "MonitorService";
@@ -32,24 +40,35 @@ public class MonitorService extends Service {
     private boolean thermalMonitoringEnabled = true;
     private boolean cpuFreqMonitoringEnabled = true;
 
-    private BroadcastReceiver powerEventReceiver;
+    private PowerEventReceiver powerEventReceiver;
     private List<Monitor> monitors = new ArrayList<>();
     private List<Thread> monitoringThreads = new ArrayList<>();
 
-    private String[] texts = new String[2];
-    private NotificationCompat.BigTextStyle notificationBigTextStyle;
+    private View overlayView;
     private NotificationCompat.Builder notificationBuilder;
-    private NotificationManagerCompat notificationManager;
+    private OverlayListAdapter listAdapter;
 
     @Override
     public void onCreate() {
         Log.v(TAG, "onCreate");
+
         initNotification();
 
         // Set the service to a foreground service
         startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this,
+                        "Overlay permission not enabled, open overlay settings to enable",
+                        Toast.LENGTH_LONG).show();
+                stopSelf();
+                return;
+            }
+        }
+
         initBroadcastReceiver();
+        initOverlay();
         initMonitoring();
     }
 
@@ -65,23 +84,55 @@ public class MonitorService extends Service {
         }
 
         // Build initial notification
-        notificationBigTextStyle = new NotificationCompat.BigTextStyle();
         notificationBuilder =
                 new NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID_DEFAULT)
-                        .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                        .setSmallIcon(R.drawable.ic_stat_default)
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setOnlyAlertOnce(true)
                         .setOngoing(true)
-                        .setStyle(notificationBigTextStyle);
-        notificationManager = NotificationManagerCompat.from(this);
+                        .setContentTitle("Thermal Monitor Service is running");
     }
 
     private void initBroadcastReceiver() {
         powerEventReceiver = new PowerEventReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        this.registerReceiver(powerEventReceiver, filter);
+        powerEventReceiver.register(this);
+    }
+
+    private void initOverlay() {
+        // Inflate layout
+        final LayoutInflater layoutInflater = LayoutInflater.from(this);
+        @SuppressLint("InflateParams")
+        View overlayView = layoutInflater.inflate(R.layout.overlay, null);
+        this.overlayView = overlayView;
+
+        // Create layout params
+        WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        int type = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY :
+                WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+
+        WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                type,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                PixelFormat.TRANSLUCENT);
+
+        // Add layout view
+        windowManager.addView(overlayView, layoutParams);
+
+        // Initialize recycler view
+        RecyclerView recyclerView = overlayView.findViewById(R.id.overlayRecyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+
+        // Disable animations (otherwise excessive ViewHolders are used in notifyItemChanged())
+        recyclerView.setItemAnimator(null);
+
+        // Set adapter on list view
+        listAdapter = new OverlayListAdapter();
+        recyclerView.setAdapter(listAdapter);
     }
 
     private void initMonitoring() {
@@ -90,11 +141,13 @@ public class MonitorService extends Service {
 
         if (thermalMonitoringEnabled) {
             ThermalMonitor thermalMonitor = new ThermalMonitor(this);
+            monitors.add(thermalMonitor);
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         }
 
         if (cpuFreqMonitoringEnabled) {
             CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
+            monitors.add(cpuFreqMonitor);
             monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
         }
 
@@ -112,12 +165,9 @@ public class MonitorService extends Service {
     @Override
     public void onDestroy() {
         Log.v(TAG, "onDestroy");
-        deinitBroadcastReceiver();
         deinitMonitoring();
-    }
-
-    private void deinitBroadcastReceiver() {
-        unregisterReceiver(powerEventReceiver);
+        deinitOverlay();
+        deinitBroadcastReceiver();
     }
 
     private void deinitMonitoring() {
@@ -125,7 +175,7 @@ public class MonitorService extends Service {
 
         try {
             monitoringRunning = false;
-            for(Thread monitoringThread : monitoringThreads) {
+            for (Thread monitoringThread : monitoringThreads) {
                 monitoringThread.interrupt();
             }
         } finally {
@@ -134,6 +184,19 @@ public class MonitorService extends Service {
 
         for (Monitor monitor : monitors) {
             monitor.deinit();
+        }
+    }
+
+    private void deinitOverlay() {
+        if (overlayView != null) {
+            WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+            windowManager.removeViewImmediate(overlayView);
+        }
+    }
+
+    private void deinitBroadcastReceiver() {
+        if (powerEventReceiver != null) {
+            powerEventReceiver.unregister(this);
         }
     }
 
@@ -174,19 +237,17 @@ public class MonitorService extends Service {
         }
     }
 
-    public void setNotificationText(String text, int i) {
-        texts[i] = text;
-        String newNotificationText = texts[0] + texts[1];
+    public void addListItem(OverlayListItem listItem) {
+        listAdapter.addListItem(listItem);
+    }
 
-        // Update notification
-        notificationBigTextStyle.bigText(newNotificationText);
-        notificationManager.notify(
-                Constants.NOTIFICATION_ID_MONITOR,
-                notificationBuilder.build());
+    public void updateListItem(OverlayListItem listItem) {
+        listAdapter.updateListItem(listItem);
     }
 
     /**
      * Called by specific monitor thread to check if it should pause.
+     *
      * @return true, when the monitoring service is paused.
      */
     public boolean isMonitoringPaused() {
@@ -208,7 +269,7 @@ public class MonitorService extends Service {
                 notPaused.await();
             }
         } catch (InterruptedException e) {
-           // Nothing to do
+            // Nothing to do
         } finally {
             mutex.unlock();
         }
@@ -226,12 +287,14 @@ public class MonitorService extends Service {
     private class PowerEventReceiver extends BroadcastReceiver {
         private static final String TAG = "PowerEventReceiver";
 
+        private boolean registered = false;
+
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.v(TAG, "Received " + intent.getAction());
 
             if (intent.getAction() != null) {
-                switch(intent.getAction()) {
+                switch (intent.getAction()) {
                     case Intent.ACTION_SCREEN_OFF:
                         pauseMonitoring();
                         break;
@@ -239,6 +302,35 @@ public class MonitorService extends Service {
                         continueMonitoring();
                         break;
                 }
+            }
+        }
+
+        /**
+         * Used to avoid multiple registrations.
+         * @param context Context to register receiver on.
+         * @return result from {@link Context#registerReceiver(BroadcastReceiver, IntentFilter)}
+         * or null if already registered.
+         */
+        public Intent register(Context context) {
+            if (!registered) {
+                IntentFilter filter = new IntentFilter();
+                filter.addAction(Intent.ACTION_SCREEN_OFF);
+                filter.addAction(Intent.ACTION_SCREEN_ON);
+                Intent res = context.registerReceiver(this, filter);
+                registered = true;
+                return res;
+            }
+
+            return null;
+        }
+
+        /**
+         * Used to avoid unregistering when already unregistered.
+         * @param context Context to unregister receiver from.
+         */
+        public void unregister(Context context) {
+            if (registered) {
+                context.unregisterReceiver(this);
             }
         }
 
