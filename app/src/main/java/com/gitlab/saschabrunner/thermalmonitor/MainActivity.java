@@ -108,4 +108,8 @@ public class MainActivity extends AppCompatActivity {
     public void stopService(View view) {
         stopService();
     }
+
+    public void showLicenses(View view) {
+        startActivity(new Intent(this, Licenses.class));
+    }
 }
