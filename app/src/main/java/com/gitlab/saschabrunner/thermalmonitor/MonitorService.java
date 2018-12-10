@@ -52,6 +52,11 @@ public class MonitorService extends Service {
     public void onCreate() {
         Log.v(TAG, "onCreate");
 
+        initNotification();
+
+        // Set the service to a foreground service
+        startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!Settings.canDrawOverlays(this)) {
                 Toast.makeText(this,
@@ -61,11 +66,6 @@ public class MonitorService extends Service {
                 return;
             }
         }
-
-        initNotification();
-
-        // Set the service to a foreground service
-        startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
 
         initBroadcastReceiver();
         initOverlay();
