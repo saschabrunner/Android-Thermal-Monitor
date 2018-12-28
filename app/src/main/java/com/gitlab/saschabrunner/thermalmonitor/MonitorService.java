@@ -11,12 +11,17 @@ import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootMain;
+import com.topjohnwu.superuser.Shell;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +33,8 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import eu.chainfire.librootjava.RootIPCReceiver;
+import eu.chainfire.librootjava.RootJava;
 
 public class MonitorService extends Service {
     private static final String TAG = "MonitorService";
@@ -43,6 +50,7 @@ public class MonitorService extends Service {
     private PowerEventReceiver powerEventReceiver;
     private List<Monitor> monitors = new ArrayList<>();
     private List<Thread> monitoringThreads = new ArrayList<>();
+    private IPCReceiver ipcReceiver;
 
     private View overlayView;
     private NotificationCompat.Builder notificationBuilder;
@@ -69,6 +77,7 @@ public class MonitorService extends Service {
 
         initBroadcastReceiver();
         initOverlay();
+        initRootProcess();
         initMonitoring();
     }
 
@@ -135,6 +144,29 @@ public class MonitorService extends Service {
         recyclerView.setAdapter(listAdapter);
     }
 
+    private void initRootProcess() {
+        RootJava.cleanupCache(this);
+        List<String> launchScript = RootJava.getLaunchScript(
+                this,
+                RootMain.class,
+                null,
+                null,
+                null,
+                BuildConfig.APPLICATION_ID + ":root");
+
+
+        ipcReceiver = new IPCReceiver(this);
+        Shell.su(launchScript.toArray(new String[0])).submit();
+
+        IIPC ipc = ipcReceiver.getIPC(30000);
+        try {
+            // Test IPC
+            ipc.openFile("");
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void initMonitoring() {
         checkMonitoringAvailable();
         continueMonitoring();
@@ -168,6 +200,8 @@ public class MonitorService extends Service {
         deinitMonitoring();
         deinitOverlay();
         deinitBroadcastReceiver();
+
+        ipcReceiver.release();
     }
 
     private void deinitMonitoring() {
@@ -307,6 +341,7 @@ public class MonitorService extends Service {
 
         /**
          * Used to avoid multiple registrations.
+         *
          * @param context Context to register receiver on.
          * @return result from {@link Context#registerReceiver(BroadcastReceiver, IntentFilter)}
          * or null if already registered.
@@ -326,6 +361,7 @@ public class MonitorService extends Service {
 
         /**
          * Used to avoid unregistering when already unregistered.
+         *
          * @param context Context to unregister receiver from.
          */
         public void unregister(Context context) {
@@ -335,13 +371,31 @@ public class MonitorService extends Service {
         }
 
         private void pauseMonitoring() {
-            Log.v(TAG, "PAUSE MONITORING");
+            Log.v(TAG, "Pause monitoring");
             MonitorService.this.pauseMonitoring();
         }
 
         private void continueMonitoring() {
-            Log.v(TAG, "CONTINUE MONITORING");
+            Log.v(TAG, "Continue monitoring");
             MonitorService.this.continueMonitoring();
+        }
+    }
+
+    public class IPCReceiver extends RootIPCReceiver<IIPC> {
+        public IPCReceiver(Context context) {
+            super(context, 0, IIPC.class);
+        }
+
+        @Override
+        public void onConnect(IIPC ipc) {
+            // Nothing to do
+            Log.v(TAG, "IPC receiver connected");
+        }
+
+        @Override
+        public void onDisconnect(IIPC ipc) {
+            // Nothing to do
+            Log.v(TAG, "IPC receiver disconnected");
         }
     }
 }
