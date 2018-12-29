@@ -8,6 +8,9 @@ import android.provider.Settings;
 import android.view.View;
 import android.widget.Toast;
 
+import com.gitlab.saschabrunner.thermalmonitor.monitor.CPU;
+import com.gitlab.saschabrunner.thermalmonitor.monitor.ThermalMonitor;
+
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,23 +26,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkMonitoringAvailable() {
-        int thermalMonitoringAvailable = ThermalZone.checkMonitoringAvailable();
+        ThermalMonitor thermalMonitor = new ThermalMonitor(
+                Utils.getGlobalPreferences(this),
+                ((App) this.getApplication()).getRootIpc());
+        int thermalMonitoringAvailable = thermalMonitor.checkSupported();
         switch (thermalMonitoringAvailable) {
-            case ThermalZone.FAILURE_REASON_OK:
+            case ThermalMonitor.FAILURE_REASON_OK:
                 break;
-            case ThermalZone.FAILURE_REASON_DIR_NOT_EXISTS:
+            case ThermalMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
                 showInfoDialog("Thermal Monitoring disabled",
                         "/sys/class/thermal does not exist");
                 break;
-            case ThermalZone.FAILURE_REASON_NO_THERMAL_ZONES:
+            case ThermalMonitor.FAILURE_REASON_NO_THERMAL_ZONES:
                 showInfoDialog("Thermal Monitoring disabled",
                         "Can't find any thermal zones in /sys/class/thermal");
                 break;
-            case ThermalZone.FAILURE_REASON_TYPE_NO_PERMISSION:
+            case ThermalMonitor.FAILURE_REASON_TYPE_NO_PERMISSION:
                 showInfoDialog("Thermal Monitoring disabled",
                         "Can't read type of a thermal zone");
                 break;
-            case ThermalZone.FAILURE_REASON_TEMP_NO_PERMISSION:
+            case ThermalMonitor.FAILURE_REASON_TEMP_NO_PERMISSION:
                 showInfoDialog("Thermal Monitoring disabled",
                         "Can't read temp of a thermal zone");
                 break;

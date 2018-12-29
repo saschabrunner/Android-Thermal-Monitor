@@ -1,6 +1,10 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.monitor;
 
 import android.util.Log;
+
+import com.gitlab.saschabrunner.thermalmonitor.MonitorService;
+import com.gitlab.saschabrunner.thermalmonitor.OverlayListItem;
+import com.gitlab.saschabrunner.thermalmonitor.R;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,6 +31,17 @@ public class CPUFreqMonitor implements Runnable, Monitor {
         }
     }
 
+    @Override
+    public int checkSupported() {
+        return 0;
+    }
+
+    @Override
+    public void init(MonitorService monitorService) {
+
+    }
+
+    @Override
     public void deinit() {
         for (CPU cpu : cpus) {
             try {

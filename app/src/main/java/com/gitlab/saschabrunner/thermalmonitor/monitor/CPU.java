@@ -1,4 +1,4 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.monitor;
 
 import android.os.Build;
 import android.util.Log;

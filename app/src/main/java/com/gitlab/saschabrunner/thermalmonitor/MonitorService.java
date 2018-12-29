@@ -11,7 +11,6 @@ import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,9 +18,10 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
-import com.gitlab.saschabrunner.thermalmonitor.root.RootMain;
-import com.topjohnwu.superuser.Shell;
+import com.gitlab.saschabrunner.thermalmonitor.monitor.CPU;
+import com.gitlab.saschabrunner.thermalmonitor.monitor.CPUFreqMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.monitor.Monitor;
+import com.gitlab.saschabrunner.thermalmonitor.monitor.ThermalMonitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +33,6 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import eu.chainfire.librootjava.RootIPCReceiver;
-import eu.chainfire.librootjava.RootJava;
 
 public class MonitorService extends Service {
     private static final String TAG = "MonitorService";
@@ -44,13 +42,12 @@ public class MonitorService extends Service {
     private boolean monitoringPaused = true;
     private boolean monitoringRunning = true;
 
-    private boolean thermalMonitoringEnabled = true;
-    private boolean cpuFreqMonitoringEnabled = true;
+    private ThermalMonitor thermalMonitor;
+    private CPUFreqMonitor cpuFreqMonitor;
 
     private PowerEventReceiver powerEventReceiver;
     private List<Monitor> monitors = new ArrayList<>();
     private List<Thread> monitoringThreads = new ArrayList<>();
-    private IPCReceiver ipcReceiver;
 
     private View overlayView;
     private NotificationCompat.Builder notificationBuilder;
@@ -77,7 +74,6 @@ public class MonitorService extends Service {
 
         initBroadcastReceiver();
         initOverlay();
-        initRootProcess();
         initMonitoring();
     }
 
@@ -144,40 +140,20 @@ public class MonitorService extends Service {
         recyclerView.setAdapter(listAdapter);
     }
 
-    private void initRootProcess() {
-        RootJava.cleanupCache(this);
-        List<String> launchScript = RootJava.getLaunchScript(
-                this,
-                RootMain.class,
-                null,
-                null,
-                null,
-                BuildConfig.APPLICATION_ID + ":root");
-
-
-        ipcReceiver = new IPCReceiver(this);
-        Shell.su(launchScript.toArray(new String[0])).submit();
-
-        IIPC ipc = ipcReceiver.getIPC(30000);
-        try {
-            // Test IPC
-            ipc.openFile("");
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void initMonitoring() {
-        checkMonitoringAvailable();
         continueMonitoring();
 
-        if (thermalMonitoringEnabled) {
-            ThermalMonitor thermalMonitor = new ThermalMonitor(this);
+        thermalMonitor = new ThermalMonitor(
+                Utils.getGlobalPreferences(this),
+                ((App) this.getApplication()).getRootIpc());
+        if (thermalMonitor.checkSupported() == ThermalMonitor.FAILURE_REASON_OK) {
+            thermalMonitor.init(this);
             monitors.add(thermalMonitor);
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         }
 
-        if (cpuFreqMonitoringEnabled) {
+//        cpuFreqMonitor = new CPUFreqMonitor(Utils.getGlobalPreferences(this));
+        if (CPU.checkMonitoringAvailable() == CPU.FAILURE_REASON_OK) { // TODO
             CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
             monitors.add(cpuFreqMonitor);
             monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
@@ -200,8 +176,6 @@ public class MonitorService extends Service {
         deinitMonitoring();
         deinitOverlay();
         deinitBroadcastReceiver();
-
-        ipcReceiver.release();
     }
 
     private void deinitMonitoring() {
@@ -238,18 +212,6 @@ public class MonitorService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    private void checkMonitoringAvailable() {
-        int thermalMonitoringAvailable = ThermalZone.checkMonitoringAvailable();
-        if (ThermalZone.FAILURE_REASON_OK != thermalMonitoringAvailable) {
-            thermalMonitoringEnabled = false;
-        }
-
-        int cpuFreqMonitoringAvailable = CPU.checkMonitoringAvailable();
-        if (CPU.FAILURE_REASON_OK != cpuFreqMonitoringAvailable) {
-            cpuFreqMonitoringEnabled = false;
-        }
     }
 
     private void pauseMonitoring() {
@@ -378,24 +340,6 @@ public class MonitorService extends Service {
         private void continueMonitoring() {
             Log.v(TAG, "Continue monitoring");
             MonitorService.this.continueMonitoring();
-        }
-    }
-
-    public class IPCReceiver extends RootIPCReceiver<IIPC> {
-        public IPCReceiver(Context context) {
-            super(context, 0, IIPC.class);
-        }
-
-        @Override
-        public void onConnect(IIPC ipc) {
-            // Nothing to do
-            Log.v(TAG, "IPC receiver connected");
-        }
-
-        @Override
-        public void onDisconnect(IIPC ipc) {
-            // Nothing to do
-            Log.v(TAG, "IPC receiver disconnected");
         }
     }
 }
