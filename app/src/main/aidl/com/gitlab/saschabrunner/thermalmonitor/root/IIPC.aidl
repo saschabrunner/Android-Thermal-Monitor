@@ -8,5 +8,5 @@ interface IIPC {
 
     String readFile(int fileId);
 
-    String openAndReadFile(String path);
+    List<String> openAndReadFile(String path);
 }

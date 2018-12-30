@@ -5,6 +5,7 @@ import android.os.RemoteException;
 import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
 
 import java.io.File;
+import java.util.List;
 
 
 public class ThermalZoneRoot extends ThermalZoneBase {
@@ -22,7 +23,13 @@ public class ThermalZoneRoot extends ThermalZoneBase {
     }
 
     private String readType() throws RemoteException {
-        return rootIpc.openAndReadFile(getTypeFilePath());
+        List<String> type = rootIpc.openAndReadFile(getTypeFilePath());
+
+        if (type.isEmpty()) {
+            return null;
+        }
+
+        return type.get(0);
     }
 
     @Override

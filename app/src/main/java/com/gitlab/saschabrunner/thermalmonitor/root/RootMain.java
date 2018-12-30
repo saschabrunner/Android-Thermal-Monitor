@@ -106,8 +106,25 @@ public class RootMain {
             }
 
             @Override
-            public String openAndReadFile(String path) {
-                return null;
+            public List<String> openAndReadFile(String path) throws RemoteException {
+                ArrayList<String> out = new ArrayList<>();
+
+                try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+                    while (true) {
+                        String curLine = reader.readLine();
+                        if (curLine == null) {
+                            break;
+                        }
+
+                        out.add(curLine);
+                    }
+                } catch (IOException e) {
+                    String msg = "Couldn't read file " + path;
+                    Log.e(TAG, msg, e);
+                    throw new RemoteException(msg);
+                }
+
+                return out;
             }
         };
 
