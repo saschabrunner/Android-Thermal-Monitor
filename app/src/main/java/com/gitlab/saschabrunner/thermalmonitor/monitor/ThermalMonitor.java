@@ -46,6 +46,10 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     public ThermalMonitor(SharedPreferences preferences) {
         this(preferences, null);
+
+        if (this.preferences.useRoot) {
+            throw new RuntimeException("TODO");
+        }
     }
 
     public ThermalMonitor(SharedPreferences preferences, IIPC rootIpc) {
@@ -226,7 +230,7 @@ public class ThermalMonitor implements Runnable, Monitor {
 //                    PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT, false);
 //
             // TODO: Remove override
-            this.useRoot = true;
+            this.useRoot = false;
         }
     }
 }

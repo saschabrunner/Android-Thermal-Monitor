@@ -11,6 +11,7 @@ import com.topjohnwu.superuser.Shell;
 
 import java.util.List;
 
+import androidx.annotation.Nullable;
 import eu.chainfire.librootjava.RootIPCReceiver;
 import eu.chainfire.librootjava.RootJava;
 
@@ -23,9 +24,22 @@ public class App extends ContainerApp {
     @Override
     public void onCreate() {
         super.onCreate();
+    }
 
-        initRootShell();
-        initRootProcess();
+    @Nullable
+    @Override
+    public Shell getShell() {
+        if (!rootEnabled()) {
+            Log.w(TAG, "Requested root shell even though root is disabled");
+            return null;
+        }
+
+        // Initialize root shell the first time it is requested
+        if (super.getShell() == null) {
+            initRootShell();
+        }
+
+        return super.getShell();
     }
 
     private void initRootShell() {
@@ -36,6 +50,19 @@ public class App extends ContainerApp {
         Shell.Config.setFlags(Shell.FLAG_REDIRECT_STDERR);
         Shell.Config.verboseLogging(BuildConfig.DEBUG);
         setShell(Shell.newInstance());
+    }
+
+    public IIPC getRootIpc() {
+        if (!rootEnabled()) {
+            Log.w(TAG, "Requested root IPC even though root is disabled");
+            return null;
+        }
+
+        if (rootIpc == null) {
+            initRootProcess();
+        }
+
+        return rootIpc;
     }
 
     private void initRootProcess() {
@@ -55,15 +82,9 @@ public class App extends ContainerApp {
         rootIpc = rootIpcReceiver.getIPC(30000);
     }
 
-    @Override
-    public void onTerminate() {
-        super.onTerminate();
-
-        rootIpcReceiver.release();
-    }
-
-    public IIPC getRootIpc() {
-        return rootIpc;
+    public boolean rootEnabled() {
+        return Utils.getGlobalPreferences(this)
+                .getBoolean(PreferenceConstants.KEY_ROOT_ENABLED, false);
     }
 
     private static class IPCReceiver extends RootIPCReceiver<IIPC> {

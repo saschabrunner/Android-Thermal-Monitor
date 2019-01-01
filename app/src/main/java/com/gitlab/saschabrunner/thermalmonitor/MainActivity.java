@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -16,6 +17,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,9 +28,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkMonitoringAvailable() {
-        ThermalMonitor thermalMonitor = new ThermalMonitor(
-                Utils.getGlobalPreferences(this),
-                ((App) this.getApplication()).getRootIpc());
+        ThermalMonitor thermalMonitor;
+        if (Utils.getApp(this).rootEnabled()) {
+            Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
+            thermalMonitor = new ThermalMonitor(
+                    Utils.getGlobalPreferences(this),
+                    Utils.getApp(this).getRootIpc());
+
+        } else {
+            Log.v(TAG, "Root disabled, initializing Thermal Monitor without Root IPC");
+            thermalMonitor = new ThermalMonitor(Utils.getGlobalPreferences(this));
+        }
+
         int thermalMonitoringAvailable = thermalMonitor.checkSupported();
         switch (thermalMonitoringAvailable) {
             case ThermalMonitor.FAILURE_REASON_OK:
