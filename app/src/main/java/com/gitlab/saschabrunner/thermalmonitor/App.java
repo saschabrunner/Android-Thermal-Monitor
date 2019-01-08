@@ -1,6 +1,7 @@
 package com.gitlab.saschabrunner.thermalmonitor;
 
 import android.content.Context;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
@@ -24,12 +25,18 @@ public class App extends ContainerApp {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        try {
+            GlobalPreferences.init(PreferenceManager.getDefaultSharedPreferences(this));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Nullable
     @Override
     public Shell getShell() {
-        if (!rootEnabled()) {
+        if (!GlobalPreferences.getInstance().rootEnabled()) {
             Log.w(TAG, "Requested root shell even though root is disabled");
             return null;
         }
@@ -53,7 +60,7 @@ public class App extends ContainerApp {
     }
 
     public IIPC getRootIpc() {
-        if (!rootEnabled()) {
+        if (!GlobalPreferences.getInstance().rootEnabled()) {
             Log.w(TAG, "Requested root IPC even though root is disabled");
             return null;
         }
@@ -80,11 +87,6 @@ public class App extends ContainerApp {
         Shell.su(launchScript.toArray(new String[0])).submit();
 
         rootIpc = rootIpcReceiver.getIPC(30000);
-    }
-
-    public boolean rootEnabled() {
-        return Utils.getGlobalPreferences(this)
-                .getBoolean(PreferenceConstants.KEY_ROOT_ENABLED, false);
     }
 
     private static class IPCReceiver extends RootIPCReceiver<IIPC> {

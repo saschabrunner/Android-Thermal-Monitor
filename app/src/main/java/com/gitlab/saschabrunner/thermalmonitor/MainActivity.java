@@ -29,18 +29,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkMonitoringAvailable() {
         ThermalMonitor thermalMonitor;
-        if (Utils.getApp(this).rootEnabled()) {
+        if (GlobalPreferences.getInstance().rootEnabled()) {
             Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
-            thermalMonitor = new ThermalMonitor(
-                    Utils.getGlobalPreferences(this),
-                    Utils.getApp(this).getRootIpc());
+            thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
 
         } else {
             Log.v(TAG, "Root disabled, initializing Thermal Monitor without Root IPC");
-            thermalMonitor = new ThermalMonitor(Utils.getGlobalPreferences(this));
+            thermalMonitor = new ThermalMonitor();
         }
 
-        int thermalMonitoringAvailable = thermalMonitor.checkSupported();
+        int thermalMonitoringAvailable =
+                thermalMonitor.checkSupported(Utils.getGlobalPreferences(this));
         switch (thermalMonitoringAvailable) {
             case ThermalMonitor.FAILURE_REASON_OK:
                 break;
@@ -59,6 +58,15 @@ public class MainActivity extends AppCompatActivity {
             case ThermalMonitor.FAILURE_REASON_TEMP_NO_PERMISSION:
                 showInfoDialog("Thermal Monitoring disabled",
                         "Can't read temp of a thermal zone");
+                break;
+            case ThermalMonitor.FAILURE_REASON_NO_ROOT_IPC:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "No root IPC object passed to monitor " +
+                                "(root globally disabled?)");
+                break;
+            default:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Unknown error");
                 break;
         }
 
@@ -128,5 +136,19 @@ public class MainActivity extends AppCompatActivity {
 
     public void showLicenses(View view) {
         startActivity(new Intent(this, Licenses.class));
+    }
+
+    public void showPreferences(View view) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.temporaryPreferencesView, new Preferences())
+                .commit();
+    }
+
+    public void showThermalMonitorPreferences(View view) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.temporaryPreferencesView, new ThermalMonitorPreferences())
+                .commit();
     }
 }

@@ -144,19 +144,18 @@ public class MonitorService extends Service {
         continueMonitoring();
 
         ThermalMonitor thermalMonitor;
-        if (Utils.getApp(this).rootEnabled()) {
+        if (GlobalPreferences.getInstance().rootEnabled()) {
             Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
-            thermalMonitor = new ThermalMonitor(
-                    Utils.getGlobalPreferences(this),
-                    Utils.getApp(this).getRootIpc());
+            thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
 
         } else {
             Log.v(TAG, "Root disabled, initializing Thermal Monitor without Root IPC");
-            thermalMonitor = new ThermalMonitor(Utils.getGlobalPreferences(this));
+            thermalMonitor = new ThermalMonitor();
         }
 
-        if (thermalMonitor.checkSupported() == ThermalMonitor.FAILURE_REASON_OK) {
-            thermalMonitor.init(this);
+        if (thermalMonitor.checkSupported(Utils.getGlobalPreferences(this))
+                == ThermalMonitor.FAILURE_REASON_OK) {
+            thermalMonitor.init(this, Utils.getGlobalPreferences(this));
             monitors.add(thermalMonitor);
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         }

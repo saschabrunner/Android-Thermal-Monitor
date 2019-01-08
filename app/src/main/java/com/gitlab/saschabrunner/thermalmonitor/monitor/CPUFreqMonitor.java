@@ -1,5 +1,6 @@
 package com.gitlab.saschabrunner.thermalmonitor.monitor;
 
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.gitlab.saschabrunner.thermalmonitor.MonitorService;
@@ -32,12 +33,12 @@ public class CPUFreqMonitor implements Runnable, Monitor {
     }
 
     @Override
-    public int checkSupported() {
+    public int checkSupported(SharedPreferences monitorPreferences) {
         return 0;
     }
 
     @Override
-    public void init(MonitorService monitorService) {
+    public void init(MonitorService monitorService, SharedPreferences monitorPreferences) {
 
     }
 

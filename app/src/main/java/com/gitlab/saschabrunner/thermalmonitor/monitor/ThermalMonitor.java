@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.gitlab.saschabrunner.thermalmonitor.MonitorService;
 import com.gitlab.saschabrunner.thermalmonitor.OverlayListItem;
+import com.gitlab.saschabrunner.thermalmonitor.PreferenceConstants;
 import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
 
 import java.io.File;
@@ -27,7 +28,8 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_NO_THERMAL_ZONES,
-            FAILURE_REASON_TYPE_NO_PERMISSION, FAILURE_REASON_TEMP_NO_PERMISSION})
+            FAILURE_REASON_TYPE_NO_PERMISSION, FAILURE_REASON_TEMP_NO_PERMISSION,
+            FAILURE_REASON_NO_ROOT_IPC})
     public @interface FAILURE_REASON {
     }
 
@@ -36,33 +38,32 @@ public class ThermalMonitor implements Runnable, Monitor {
     public static final int FAILURE_REASON_NO_THERMAL_ZONES = 2;
     public static final int FAILURE_REASON_TYPE_NO_PERMISSION = 3;
     public static final int FAILURE_REASON_TEMP_NO_PERMISSION = 4;
+    public static final int FAILURE_REASON_NO_ROOT_IPC = 5;
 
-    private final Preferences preferences;
     private final IIPC rootIpc;
 
+    private Preferences preferences;
     private MonitorService monitorService;
     private List<ThermalZoneBase> thermalZones;
     private Map<ThermalZoneBase, OverlayListItem> listItemByThermalZone;
 
-    public ThermalMonitor(SharedPreferences preferences) {
-        this(preferences, null);
-
-        if (this.preferences.useRoot) {
-            throw new RuntimeException("TODO");
-        }
+    public ThermalMonitor() {
+        this(null);
     }
 
-    public ThermalMonitor(SharedPreferences preferences, IIPC rootIpc) {
-        this.preferences = new Preferences(preferences);
+    public ThermalMonitor(IIPC rootIpc) {
         this.rootIpc = rootIpc;
     }
 
     @Override
     @FAILURE_REASON
-    public int checkSupported() {
+    public int checkSupported(SharedPreferences monitorPreferences) {
+        // Preferences to check support with
+        Preferences preferences = new Preferences(monitorPreferences);
+
         if (preferences.useRoot) {
             if (this.rootIpc == null) {
-                // TODO: Failure reason
+                return FAILURE_REASON_NO_ROOT_IPC;
             }
 
             try {
@@ -110,11 +111,13 @@ public class ThermalMonitor implements Runnable, Monitor {
         }
     }
 
-    public void init(MonitorService monitorService) {
-        if (checkSupported() != FAILURE_REASON_OK) {
+    @Override
+    public void init(MonitorService monitorService, SharedPreferences monitorPreferences) {
+        if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
             throw new RuntimeException("TODO");
         }
 
+        this.preferences = new Preferences(monitorPreferences);
         this.monitorService = monitorService;
 
         if (preferences.useRoot) {
@@ -226,11 +229,8 @@ public class ThermalMonitor implements Runnable, Monitor {
         private final boolean useRoot;
 
         private Preferences(SharedPreferences preferences) {
-//            this.useRoot = preferences.getBoolean(
-//                    PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT, false);
-//
-            // TODO: Remove override
-            this.useRoot = false;
+            this.useRoot = preferences.getBoolean(
+                    PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT, false);
         }
     }
 }

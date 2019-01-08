@@ -1,19 +1,23 @@
 package com.gitlab.saschabrunner.thermalmonitor.monitor;
 
+import android.content.SharedPreferences;
+
 import com.gitlab.saschabrunner.thermalmonitor.MonitorService;
 
 public interface Monitor {
     /**
      *
+     * @param monitorPreferences
      * @return 0 to indicate support, non zero value to indicate no support
      */
-    int checkSupported();
+    int checkSupported(SharedPreferences monitorPreferences);
 
     /**
      *
      * @param monitorService
+     * @param monitorPreferences
      */
-    void init(MonitorService monitorService);
+    void init(MonitorService monitorService, SharedPreferences monitorPreferences);
 
     /**
      *
