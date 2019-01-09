@@ -157,7 +157,7 @@ public class ThermalMonitor implements Runnable, Monitor {
     @Override
     public void init(MonitorService monitorService, SharedPreferences monitorPreferences) {
         if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
-            throw new RuntimeException("TODO");
+            throw new RuntimeException("Monitor not supported with supplied preferences");
         }
 
         this.preferences = new Preferences(monitorPreferences);

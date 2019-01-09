@@ -18,7 +18,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.gitlab.saschabrunner.thermalmonitor.monitor.CPU;
 import com.gitlab.saschabrunner.thermalmonitor.monitor.CPUFreqMonitor;
 import com.gitlab.saschabrunner.thermalmonitor.monitor.Monitor;
 import com.gitlab.saschabrunner.thermalmonitor.monitor.ThermalMonitor;
@@ -41,9 +40,6 @@ public class MonitorService extends Service {
     private final Condition notPaused = mutex.newCondition();
     private boolean monitoringPaused = true;
     private boolean monitoringRunning = true;
-
-    private ThermalMonitor thermalMonitor;
-    private CPUFreqMonitor cpuFreqMonitor;
 
     private PowerEventReceiver powerEventReceiver;
     private List<Monitor> monitors = new ArrayList<>();
@@ -160,9 +156,10 @@ public class MonitorService extends Service {
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         }
 
-//        cpuFreqMonitor = new CPUFreqMonitor(Utils.getGlobalPreferences(this));
-        if (CPU.checkMonitoringAvailable() == CPU.FAILURE_REASON_OK) { // TODO
-            CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
+        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
+        if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
+                == CPUFreqMonitor.FAILURE_REASON_OK) {
+            cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
             monitors.add(cpuFreqMonitor);
             monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
         }

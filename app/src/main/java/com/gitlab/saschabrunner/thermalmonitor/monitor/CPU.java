@@ -14,12 +14,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 
 public class CPU {
     private static final String TAG = "CPU";
@@ -32,17 +28,6 @@ public class CPU {
     public static final int STATE_OFFLINE = 0;
     public static final int STATE_ONLINE = 1;
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_DIR_EMPTY,
-            FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION})
-    public @interface FAILURE_REASON {
-    }
-
-    public static final int FAILURE_REASON_OK = 0;
-    public static final int FAILURE_REASON_DIR_NOT_EXISTS = 1;
-    public static final int FAILURE_REASON_DIR_EMPTY = 2;
-    public static final int FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION = 3;
-
     private File directory;
     private FileChannel stateFileChannel;
 
@@ -52,7 +37,7 @@ public class CPU {
     private int lastState;
     private int lastFrequency;
 
-    private CPU(File sysfsDirectory) throws IOException {
+    public CPU(File sysfsDirectory) throws IOException {
         if (isValidSysfsDirectory(sysfsDirectory)) {
             this.directory = sysfsDirectory;
         } else {
@@ -162,87 +147,11 @@ public class CPU {
         return lastFrequency;
     }
 
-    @NonNull
-    @Override
-    public String toString() {
-        StringBuilder out = new StringBuilder();
-
-        out.append("CPU")
-                .append(this.getId())
-                .append(": ");
-
-        if (STATE_ONLINE == this.lastState) {
-            out.append(this.getLastFrequency())
-                    .append("KHz");
-        } else {
-            out.append("offline");
-        }
-
-        return out.toString();
-    }
-
-    @FAILURE_REASON
-    public static int checkMonitoringAvailable() {
-        // Check if dir is present
-        File cpusDir = new File("/sys/devices/system/cpu");
-        if (!cpusDir.exists()) {
-            return FAILURE_REASON_DIR_NOT_EXISTS;
-        }
-
-        // Check if dirs for CPU cores are present
-        File[] cpuDirs = filterCpus(cpusDir);
-        if (cpuDirs == null || cpuDirs.length == 0) {
-            return FAILURE_REASON_DIR_EMPTY;
-        }
-
-        // Check if scaling_cur_frequency is accessible for at least one core
-        // The file might not exist for cores that are offline
-        // We assume that at least one core is online
-        boolean curFrequencyReadable = false;
-        for (File cpuDir : cpuDirs) {
-            File curFrequencyFile = new File(getCurFrequencyFilePath(cpuDir.getAbsolutePath()));
-            if (curFrequencyFile.exists() && curFrequencyFile.canRead()) {
-                curFrequencyReadable = true;
-                break;
-            }
-        }
-
-        if (!curFrequencyReadable) {
-            return FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION;
-        }
-
-        return FAILURE_REASON_OK;
-    }
-
-    public static List<CPU> getCpus() {
-        File cpusDir = new File("/sys/devices/system/cpu");
-        File[] cpuDirs = filterCpus(cpusDir);
-
-        List<CPU> cpus = new ArrayList<>(cpuDirs.length);
-        for (File dir : cpuDirs) {
-            try {
-                cpus.add(new CPU(dir));
-            } catch (IOException e) {
-                e.printStackTrace();
-                return Collections.emptyList();
-            }
-        }
-
-        return cpus;
-    }
-
-    private static File[] filterCpus(File cpusDir) {
-        return cpusDir.listFiles((dir, name) -> {
-            String lcName = name.toLowerCase();
-            return lcName.matches("(cpu)[0-9]+");
-        });
-    }
-
-    private static String getOnlineStateFilePath(String cpuPath) {
+    public static String getOnlineStateFilePath(String cpuPath) {
         return cpuPath + "/online";
     }
 
-    private static String getCurFrequencyFilePath(String cpuPath) {
+    public static String getCurFrequencyFilePath(String cpuPath) {
         return cpuPath + "/cpufreq/scaling_cur_freq";
     }
 }

@@ -9,7 +9,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import com.gitlab.saschabrunner.thermalmonitor.monitor.CPU;
+import com.gitlab.saschabrunner.thermalmonitor.monitor.CPUFreqMonitor;
 import com.gitlab.saschabrunner.thermalmonitor.monitor.ThermalMonitor;
 
 import androidx.annotation.RequiresApi;
@@ -64,25 +64,35 @@ public class MainActivity extends AppCompatActivity {
                         "No root IPC object passed to monitor " +
                                 "(root globally disabled?)");
                 break;
+            case ThermalMonitor.FAILURE_REASON_TEMP_NOT_READABLE:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Can't read temp of a thermal zone");
+                break;
+            case ThermalMonitor.FAILURE_REASON_TYPE_NOT_READABLE:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Can't read type of a thermal zone");
+                break;
             default:
                 showInfoDialog("Thermal Monitoring disabled",
                         "Unknown error");
                 break;
         }
 
-        int cpuFreqMonitoringAvailable = CPU.checkMonitoringAvailable();
+        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
+        int cpuFreqMonitoringAvailable =
+                cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this));
         switch (cpuFreqMonitoringAvailable) {
-            case CPU.FAILURE_REASON_OK:
+            case CPUFreqMonitor.FAILURE_REASON_OK:
                 break;
-            case CPU.FAILURE_REASON_DIR_NOT_EXISTS:
+            case CPUFreqMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
                 showInfoDialog("CPU frequency monitoring disabled",
                         "/sys/devices/system/cpu does not exist");
                 break;
-            case CPU.FAILURE_REASON_DIR_EMPTY:
+            case CPUFreqMonitor.FAILURE_REASON_DIR_EMPTY:
                 showInfoDialog("CPU frequency monitoring disabled",
                         "Can't find any CPUs in /sys/devices/system/cpu");
                 break;
-            case CPU.FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION:
+            case CPUFreqMonitor.FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION:
                 showInfoDialog("CPU frequency monitoring disabled",
                         "Can't read frequency of a CPU");
                 break;
