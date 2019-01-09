@@ -85,7 +85,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
             try {
                 cpu.update();
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Error updating CPU '" + cpu.getId() + "'", e);
                 return;
             }
         }

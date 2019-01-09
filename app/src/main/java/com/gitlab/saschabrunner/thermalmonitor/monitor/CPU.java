@@ -6,7 +6,6 @@ import android.util.Log;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -130,12 +129,12 @@ public class CPU {
         }
     }
 
-    private void updateFrequency() throws IOException {
+    private void updateFrequency() {
         try (BufferedReader reader = new BufferedReader(new FileReader(getCurFrequencyFilePath()))) {
             lastFrequency = Integer.valueOf(reader.readLine());
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             // There's a slim chance, that the CPU went offline since we last checked
-            Log.d(TAG, "CPU went offline since last check");
+            Log.d(TAG, "CPU went offline since last check", e);
         }
     }
 

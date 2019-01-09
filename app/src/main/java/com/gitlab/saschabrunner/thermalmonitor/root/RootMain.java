@@ -48,7 +48,7 @@ public class RootMain {
             @Override
             public int openFile(String path, int maxLength) throws RemoteException {
                 if (maxLength <= 0) {
-                    throw new RemoteException("TODO");
+                    throw new RemoteException("Parameter 'maxLength' must be positive");
                 }
 
                 try {
@@ -69,6 +69,24 @@ public class RootMain {
                 return openFiles.size() - 1;
             }
 
+            @Override
+            public boolean closeFile(int fileId) throws RemoteException {
+                if (fileId < 0 || fileId >= openFiles.size()) {
+                    // ID does not refer to a open file
+                    return false;
+                }
+
+                try {
+                    openFiles.get(fileId).close();
+                } catch (IOException e) {
+                    String msg = "Couldn't close file " + fileId;
+                    Log.e(TAG, msg, e);
+                    throw new RemoteException(msg);
+                }
+
+                return true;
+            }
+
             private void ensureBufferSize(int expectedSize) {
                 synchronized (readBufferLock) {
                     if (fileChannelReadBuffer == null
@@ -81,7 +99,7 @@ public class RootMain {
             @Override
             public String readFile(int fileId) throws RemoteException {
                 if (fileId < 0 || fileId >= openFiles.size()) {
-                    throw new RemoteException("TODO");
+                    throw new RemoteException("File ID " + fileId + " is not valid");
                 }
 
                 synchronized (readBufferLock) {
@@ -136,14 +154,6 @@ public class RootMain {
                     -1,
                     true);
         } catch (RootIPC.TimeoutException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void testRoot() {
-        try (BufferedReader br = new BufferedReader(new FileReader("/sys/class/thermal/thermal_zone1/temp"))) {
-            Log.v(TAG, br.readLine());
-        } catch (IOException e) {
             e.printStackTrace();
         }
     }
