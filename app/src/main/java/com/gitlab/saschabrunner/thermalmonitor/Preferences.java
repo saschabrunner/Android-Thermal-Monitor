@@ -5,8 +5,7 @@ import android.os.Bundle;
 import androidx.preference.PreferenceFragmentCompat;
 
 
-public class Preferences extends PreferenceFragmentCompat { // TODO: PreferenceFragmentCompat
-
+public class Preferences extends PreferenceFragmentCompat {
     public Preferences() {
         // Required empty public constructor
     }

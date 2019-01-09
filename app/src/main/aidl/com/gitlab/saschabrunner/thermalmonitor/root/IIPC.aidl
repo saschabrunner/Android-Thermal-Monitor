@@ -6,6 +6,8 @@ interface IIPC {
 
     int openFile(String path, int maxLength);
 
+    boolean closeFile(int fileId);
+
     String readFile(int fileId);
 
     List<String> openAndReadFile(String path);

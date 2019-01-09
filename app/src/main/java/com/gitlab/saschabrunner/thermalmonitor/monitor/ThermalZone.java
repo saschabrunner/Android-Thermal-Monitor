@@ -1,6 +1,7 @@
 package com.gitlab.saschabrunner.thermalmonitor.monitor;
 
 import android.os.Build;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,6 +14,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 public class ThermalZone extends ThermalZoneBase {
+    private static final String TAG = "ThermalZone";
+
     private String type;
 
     private FileChannel temperatureFileChannel;
@@ -61,7 +64,8 @@ public class ThermalZone extends ThermalZoneBase {
             // Parse integer value
             lastTemperature = Integer.valueOf(new String(buf.array(), 0, length - 1));
         } catch (IOException e) {
-            // TODO
+            Log.e(TAG, "Couldn't update temperature of thermal zone '" + type + "'", e);
+            lastTemperature = -1;
         }
     }
 

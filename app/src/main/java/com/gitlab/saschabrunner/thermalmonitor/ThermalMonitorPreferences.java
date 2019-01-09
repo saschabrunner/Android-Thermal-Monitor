@@ -5,8 +5,7 @@ import android.os.Bundle;
 import androidx.preference.PreferenceFragmentCompat;
 
 
-public class ThermalMonitorPreferences extends PreferenceFragmentCompat { // TODO: PreferenceFragmentCompat
-
+public class ThermalMonitorPreferences extends PreferenceFragmentCompat {
     public ThermalMonitorPreferences() {
         // Required empty public constructor
     }

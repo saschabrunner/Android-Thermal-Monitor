@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 
 public class ThermalMonitor implements Runnable, Monitor {
     private static final String TAG = "ThermalMonitor";
@@ -29,7 +30,8 @@ public class ThermalMonitor implements Runnable, Monitor {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_NO_THERMAL_ZONES,
             FAILURE_REASON_TYPE_NO_PERMISSION, FAILURE_REASON_TEMP_NO_PERMISSION,
-            FAILURE_REASON_NO_ROOT_IPC})
+            FAILURE_REASON_NO_ROOT_IPC, FAILURE_REASON_TYPE_NOT_READABLE,
+            FAILURE_REASON_TEMP_NOT_READABLE})
     public @interface FAILURE_REASON {
     }
 
@@ -39,6 +41,8 @@ public class ThermalMonitor implements Runnable, Monitor {
     public static final int FAILURE_REASON_TYPE_NO_PERMISSION = 3;
     public static final int FAILURE_REASON_TEMP_NO_PERMISSION = 4;
     public static final int FAILURE_REASON_NO_ROOT_IPC = 5;
+    public static final int FAILURE_REASON_TYPE_NOT_READABLE = 6;
+    public static final int FAILURE_REASON_TEMP_NOT_READABLE = 7;
 
     private final IIPC rootIpc;
 
@@ -62,53 +66,92 @@ public class ThermalMonitor implements Runnable, Monitor {
         Preferences preferences = new Preferences(monitorPreferences);
 
         if (preferences.useRoot) {
-            if (this.rootIpc == null) {
-                return FAILURE_REASON_NO_ROOT_IPC;
-            }
-
-            try {
-                List<String> thermalZoneDirs = filterThermalZonesRoot();
-                if (thermalZoneDirs.isEmpty()) {
-                    return FAILURE_REASON_NO_THERMAL_ZONES;
-                }
-
-                // TODO: Check if we can read the needed files
-            } catch (RemoteException e) {
-                // TODO
-            }
-
-            return FAILURE_REASON_OK;
+            return checkSupportedRoot();
         } else {
-            // Check if dir is present
-            File thermalZonesDir = new File(THERMAL_ZONES_DIR);
-            if (!thermalZonesDir.exists()) {
-                return FAILURE_REASON_DIR_NOT_EXISTS;
+            return checkSupportedBasic();
+        }
+    }
+
+    private int checkSupportedBasic() {
+        // Check if dir is present
+        File thermalZonesDir = new File(THERMAL_ZONES_DIR);
+        if (!thermalZonesDir.exists()) {
+            return FAILURE_REASON_DIR_NOT_EXISTS;
+        }
+
+        // Check if dirs for thermal zones are present
+        File[] thermalZoneDirs = filterThermalZones(thermalZonesDir);
+        if (thermalZoneDirs == null || thermalZoneDirs.length == 0) {
+            return FAILURE_REASON_NO_THERMAL_ZONES;
+        }
+
+        // Check if required files are accessible for every thermal zone
+        // Right now we assume same permissions for all thermal zones
+        for (File zoneDir : thermalZoneDirs) {
+            File typeFile =
+                    new File(ThermalZone.getTypeFilePath(zoneDir.getAbsolutePath()));
+            if (!typeFile.canRead()) {
+                return FAILURE_REASON_TYPE_NO_PERMISSION;
             }
 
-            // Check if dirs for thermal zones are present
-            File[] thermalZoneDirs = filterThermalZones(thermalZonesDir);
-            if (thermalZoneDirs == null || thermalZoneDirs.length == 0) {
+            File tempFile =
+                    new File(ThermalZone.getTemperatureFilePath(zoneDir.getAbsolutePath()));
+            if (!tempFile.canRead()) {
+                return FAILURE_REASON_TEMP_NO_PERMISSION;
+            }
+        }
+
+        return FAILURE_REASON_OK;
+    }
+
+    private int checkSupportedRoot() {
+        // Check if root IPC is available
+        if (this.rootIpc == null) {
+            return FAILURE_REASON_NO_ROOT_IPC;
+        }
+
+        // Check if dirs for thermal zones are present
+        List<String> thermalZoneDirs;
+        try {
+            thermalZoneDirs = filterThermalZonesRoot();
+            if (thermalZoneDirs.isEmpty()) {
                 return FAILURE_REASON_NO_THERMAL_ZONES;
             }
+        } catch (RemoteException e) {
+            Log.e(TAG, "Got exception while reading thermal zones", e);
+            return FAILURE_REASON_NO_THERMAL_ZONES;
+        }
 
-            // Check if required files are accessible for every thermal zone
-            // Right now we assume same permissions for all thermal zones
-            for (File zoneDir : thermalZoneDirs) {
-                File typeFile =
-                        new File(ThermalZone.getTypeFilePath(zoneDir.getAbsolutePath()));
-                if (!typeFile.canRead()) {
-                    return FAILURE_REASON_TYPE_NO_PERMISSION;
-                }
-
-                File tempFile =
-                        new File(ThermalZone.getTemperatureFilePath(zoneDir.getAbsolutePath()));
-                if (!tempFile.canRead()) {
-                    return FAILURE_REASON_TEMP_NO_PERMISSION;
+        // Check if type is available for every thermal zone
+        try {
+            for (String thermalZoneDir : thermalZoneDirs) {
+                List<String> type = rootIpc.openAndReadFile(
+                        ThermalZone.getTypeFilePath(thermalZoneDir));
+                if (type == null || type.isEmpty()) {
+                    return FAILURE_REASON_TYPE_NOT_READABLE;
                 }
             }
-
-            return FAILURE_REASON_OK;
+        } catch (RemoteException e) {
+            Log.e(TAG, "Got exception while reading thermal zone type", e);
+            return FAILURE_REASON_TYPE_NOT_READABLE;
         }
+
+        // Check if temperature is available for every thermal zone
+        try {
+            for (String thermalZoneDir : thermalZoneDirs) {
+                List<String> temperature = rootIpc.openAndReadFile(
+                        ThermalZone.getTemperatureFilePath(thermalZoneDir));
+
+                if (temperature == null || temperature.isEmpty()) {
+                    return FAILURE_REASON_TEMP_NOT_READABLE;
+                }
+            }
+        } catch (RemoteException e) {
+            Log.e(TAG, "Got exception while reading thermal zone temperature", e);
+            return FAILURE_REASON_TEMP_NOT_READABLE;
+        }
+
+        return FAILURE_REASON_OK;
     }
 
     @Override
@@ -180,7 +223,7 @@ public class ThermalMonitor implements Runnable, Monitor {
         });
     }
 
-    private List<String> filterThermalZonesRoot() throws RemoteException {
+    private @NonNull List<String> filterThermalZonesRoot() throws RemoteException {
         List<String> files = rootIpc.listFiles(THERMAL_ZONES_DIR);
         List<String> filteredThermalZoneDirs = new ArrayList<>();
         for (String file : files) {
