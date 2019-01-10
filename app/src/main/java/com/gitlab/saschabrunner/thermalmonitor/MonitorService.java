@@ -20,6 +20,7 @@ import android.widget.Toast;
 
 import com.gitlab.saschabrunner.thermalmonitor.monitor.CPUFreqMonitor;
 import com.gitlab.saschabrunner.thermalmonitor.monitor.Monitor;
+import com.gitlab.saschabrunner.thermalmonitor.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.monitor.ThermalMonitor;
 
 import java.util.ArrayList;
@@ -149,19 +150,25 @@ public class MonitorService extends Service {
             thermalMonitor = new ThermalMonitor();
         }
 
-        if (thermalMonitor.checkSupported(Utils.getGlobalPreferences(this))
-                == ThermalMonitor.FAILURE_REASON_OK) {
-            thermalMonitor.init(this, Utils.getGlobalPreferences(this));
-            monitors.add(thermalMonitor);
-            monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
-        }
+        try {
+            if (thermalMonitor.checkSupported(Utils.getGlobalPreferences(this))
+                    == ThermalMonitor.FAILURE_REASON_OK) {
+                thermalMonitor.init(this, Utils.getGlobalPreferences(this));
+                monitors.add(thermalMonitor);
+                monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
+            }
 
-        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
-        if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
-                == CPUFreqMonitor.FAILURE_REASON_OK) {
-            cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
-            monitors.add(cpuFreqMonitor);
-            monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
+            CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
+            if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
+                    == CPUFreqMonitor.FAILURE_REASON_OK) {
+                cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
+                monitors.add(cpuFreqMonitor);
+                monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
+            }
+        } catch (MonitorException e) {
+            Log.e(TAG, e.getMessage(this));
+            stopSelf();
+            return;
         }
 
         for (Thread monitoringThread : monitoringThreads) {

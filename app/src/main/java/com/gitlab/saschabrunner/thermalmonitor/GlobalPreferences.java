@@ -14,7 +14,8 @@ public class GlobalPreferences {
     }
 
     public boolean rootEnabled() {
-        return preferences.getBoolean(PreferenceConstants.KEY_ROOT_ENABLED, false);
+        return preferences.getBoolean(PreferenceConstants.KEY_ROOT_ENABLED,
+                PreferenceConstants.DEF_ROOT_ENABLED);
     }
 
     public static void init(SharedPreferences globalPreferences) {

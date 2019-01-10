@@ -7,6 +7,7 @@ import android.util.Log;
 import com.gitlab.saschabrunner.thermalmonitor.MonitorService;
 import com.gitlab.saschabrunner.thermalmonitor.OverlayListItem;
 import com.gitlab.saschabrunner.thermalmonitor.PreferenceConstants;
+import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
 
 import java.io.File;
@@ -61,7 +62,7 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     @Override
     @FAILURE_REASON
-    public int checkSupported(SharedPreferences monitorPreferences) {
+    public int checkSupported(SharedPreferences monitorPreferences) throws MonitorException {
         // Preferences to check support with
         Preferences preferences = new Preferences(monitorPreferences);
 
@@ -155,9 +156,10 @@ public class ThermalMonitor implements Runnable, Monitor {
     }
 
     @Override
-    public void init(MonitorService monitorService, SharedPreferences monitorPreferences) {
+    public void init(MonitorService monitorService, SharedPreferences monitorPreferences)
+            throws MonitorException {
         if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
-            throw new RuntimeException("Monitor not supported with supplied preferences");
+            throw new MonitorException(R.string.monitor_not_supported_with_supplied_preferences);
         }
 
         this.preferences = new Preferences(monitorPreferences);
@@ -199,7 +201,7 @@ public class ThermalMonitor implements Runnable, Monitor {
             }
 
             try {
-                Thread.sleep(1000);
+                Thread.sleep(preferences.interaval);
             } catch (InterruptedException e) {
                 if (monitorService.isMonitoringRunning()) {
                     // No interrupt should happen except when monitor service quits
@@ -270,10 +272,25 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     private static class Preferences {
         private final boolean useRoot;
+        private final int interaval;
 
-        private Preferences(SharedPreferences preferences) {
+        private Preferences(SharedPreferences preferences) throws MonitorException {
             this.useRoot = preferences.getBoolean(
-                    PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT, false);
+                    PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT,
+                    PreferenceConstants.DEF_THERMAL_MONITOR_USE_ROOT);
+
+            this.interaval = preferences.getInt(
+                    PreferenceConstants.KEY_THERMAL_MONITOR_REFRESH_INTERVAL,
+                    PreferenceConstants.DEF_THERMAL_MONITOR_REFRESH_INTERVAL);
+
+            validate();
+        }
+
+        private void validate() throws MonitorException {
+            // Let's not allow faster refresh intervals
+            if (interaval < 500) {
+                throw new MonitorException(R.string.interval_must_be_at_least_500ms);
+            }
         }
     }
 }
