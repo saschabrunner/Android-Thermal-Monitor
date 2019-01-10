@@ -26,11 +26,7 @@ public class App extends ContainerApp {
     public void onCreate() {
         super.onCreate();
 
-        try {
-            GlobalPreferences.init(PreferenceManager.getDefaultSharedPreferences(this));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        GlobalPreferences.init(PreferenceManager.getDefaultSharedPreferences(this));
     }
 
     @Nullable
