@@ -18,6 +18,10 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.gitlab.saschabrunner.thermalmonitor.monitor.CPUFreqMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.monitor.Monitor;
+import com.gitlab.saschabrunner.thermalmonitor.monitor.ThermalMonitor;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
@@ -36,9 +40,6 @@ public class MonitorService extends Service {
     private final Condition notPaused = mutex.newCondition();
     private boolean monitoringPaused = true;
     private boolean monitoringRunning = true;
-
-    private boolean thermalMonitoringEnabled = true;
-    private boolean cpuFreqMonitoringEnabled = true;
 
     private PowerEventReceiver powerEventReceiver;
     private List<Monitor> monitors = new ArrayList<>();
@@ -136,17 +137,29 @@ public class MonitorService extends Service {
     }
 
     private void initMonitoring() {
-        checkMonitoringAvailable();
         continueMonitoring();
 
-        if (thermalMonitoringEnabled) {
-            ThermalMonitor thermalMonitor = new ThermalMonitor(this);
+        ThermalMonitor thermalMonitor;
+        if (GlobalPreferences.getInstance().rootEnabled()) {
+            Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
+            thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
+
+        } else {
+            Log.v(TAG, "Root disabled, initializing Thermal Monitor without Root IPC");
+            thermalMonitor = new ThermalMonitor();
+        }
+
+        if (thermalMonitor.checkSupported(Utils.getGlobalPreferences(this))
+                == ThermalMonitor.FAILURE_REASON_OK) {
+            thermalMonitor.init(this, Utils.getGlobalPreferences(this));
             monitors.add(thermalMonitor);
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         }
 
-        if (cpuFreqMonitoringEnabled) {
-            CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
+        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
+        if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
+                == CPUFreqMonitor.FAILURE_REASON_OK) {
+            cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
             monitors.add(cpuFreqMonitor);
             monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
         }
@@ -204,18 +217,6 @@ public class MonitorService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    private void checkMonitoringAvailable() {
-        int thermalMonitoringAvailable = ThermalZone.checkMonitoringAvailable();
-        if (ThermalZone.FAILURE_REASON_OK != thermalMonitoringAvailable) {
-            thermalMonitoringEnabled = false;
-        }
-
-        int cpuFreqMonitoringAvailable = CPU.checkMonitoringAvailable();
-        if (CPU.FAILURE_REASON_OK != cpuFreqMonitoringAvailable) {
-            cpuFreqMonitoringEnabled = false;
-        }
     }
 
     private void pauseMonitoring() {
@@ -307,6 +308,7 @@ public class MonitorService extends Service {
 
         /**
          * Used to avoid multiple registrations.
+         *
          * @param context Context to register receiver on.
          * @return result from {@link Context#registerReceiver(BroadcastReceiver, IntentFilter)}
          * or null if already registered.
@@ -326,6 +328,7 @@ public class MonitorService extends Service {
 
         /**
          * Used to avoid unregistering when already unregistered.
+         *
          * @param context Context to unregister receiver from.
          */
         public void unregister(Context context) {
@@ -335,12 +338,12 @@ public class MonitorService extends Service {
         }
 
         private void pauseMonitoring() {
-            Log.v(TAG, "PAUSE MONITORING");
+            Log.v(TAG, "Pause monitoring");
             MonitorService.this.pauseMonitoring();
         }
 
         private void continueMonitoring() {
-            Log.v(TAG, "CONTINUE MONITORING");
+            Log.v(TAG, "Continue monitoring");
             MonitorService.this.continueMonitoring();
         }
     }
