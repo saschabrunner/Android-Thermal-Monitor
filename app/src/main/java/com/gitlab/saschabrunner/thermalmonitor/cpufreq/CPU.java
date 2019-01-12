@@ -1,4 +1,4 @@
-package com.gitlab.saschabrunner.thermalmonitor.monitor;
+package com.gitlab.saschabrunner.thermalmonitor.cpufreq;
 
 import android.os.Build;
 import android.util.Log;

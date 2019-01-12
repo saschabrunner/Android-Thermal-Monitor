@@ -1,4 +1,4 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.main.ui;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -9,9 +9,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import com.gitlab.saschabrunner.thermalmonitor.monitor.CPUFreqMonitor;
-import com.gitlab.saschabrunner.thermalmonitor.monitor.MonitorException;
-import com.gitlab.saschabrunner.thermalmonitor.monitor.ThermalMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.gitlab.saschabrunner.thermalmonitor.cpufreq.CPUFreqMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorService;
+import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.thermal.ui.ThermalMonitorPreferencesFragment;
+import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
@@ -150,20 +155,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showLicenses(View view) {
-        startActivity(new Intent(this, Licenses.class));
+        startActivity(new Intent(this, LicensesActivity.class));
     }
 
     public void showPreferences(View view) {
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.temporaryPreferencesView, new Preferences())
+                .replace(R.id.temporaryPreferencesView, new PreferencesFragment())
                 .commit();
     }
 
     public void showThermalMonitorPreferences(View view) {
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.temporaryPreferencesView, new ThermalMonitorPreferences())
+                .replace(R.id.temporaryPreferencesView, new ThermalMonitorPreferencesFragment())
                 .commit();
     }
 }

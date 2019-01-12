@@ -1,8 +1,6 @@
-package com.gitlab.saschabrunner.thermalmonitor.monitor;
+package com.gitlab.saschabrunner.thermalmonitor.main.monitor;
 
 import android.content.SharedPreferences;
-
-import com.gitlab.saschabrunner.thermalmonitor.MonitorService;
 
 public interface Monitor {
     /**

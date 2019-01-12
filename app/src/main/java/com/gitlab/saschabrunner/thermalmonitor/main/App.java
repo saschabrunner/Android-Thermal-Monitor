@@ -1,9 +1,10 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.main;
 
 import android.content.Context;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.gitlab.saschabrunner.thermalmonitor.BuildConfig;
 import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootMain;
 import com.topjohnwu.superuser.BusyBox;

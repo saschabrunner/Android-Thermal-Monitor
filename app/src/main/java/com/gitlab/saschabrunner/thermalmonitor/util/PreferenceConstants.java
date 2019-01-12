@@ -1,4 +1,4 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.util;
 
 public class PreferenceConstants {
     public static final String GLOBAL_SETTINGS_NAME = "com.gitlab.saschabrunner.thermalmonitor.preferences";

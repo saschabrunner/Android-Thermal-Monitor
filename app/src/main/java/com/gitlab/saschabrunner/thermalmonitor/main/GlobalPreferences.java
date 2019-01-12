@@ -1,7 +1,9 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.main;
 
 import android.content.SharedPreferences;
 import android.util.Log;
+
+import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
 public class GlobalPreferences {
     private static final String TAG = "GlobalPreferences";

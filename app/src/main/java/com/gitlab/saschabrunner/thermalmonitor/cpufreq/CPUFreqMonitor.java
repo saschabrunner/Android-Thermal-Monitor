@@ -1,12 +1,14 @@
-package com.gitlab.saschabrunner.thermalmonitor.monitor;
+package com.gitlab.saschabrunner.thermalmonitor.cpufreq;
 
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.gitlab.saschabrunner.thermalmonitor.MonitorService;
-import com.gitlab.saschabrunner.thermalmonitor.OverlayListItem;
-import com.gitlab.saschabrunner.thermalmonitor.PreferenceConstants;
 import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.Monitor;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorService;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListItem;
+import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
 import java.io.File;
 import java.io.IOException;

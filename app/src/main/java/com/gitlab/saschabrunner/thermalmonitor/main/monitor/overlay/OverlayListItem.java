@@ -1,4 +1,4 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay;
 
 public class OverlayListItem {
     private String label;

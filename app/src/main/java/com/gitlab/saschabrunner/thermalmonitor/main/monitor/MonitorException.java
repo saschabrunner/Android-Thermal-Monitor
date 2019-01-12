@@ -1,4 +1,4 @@
-package com.gitlab.saschabrunner.thermalmonitor.monitor;
+package com.gitlab.saschabrunner.thermalmonitor.main.monitor;
 
 import android.content.Context;
 

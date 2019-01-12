@@ -1,4 +1,4 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.main.monitor;
 
 import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
@@ -18,10 +18,14 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.gitlab.saschabrunner.thermalmonitor.monitor.CPUFreqMonitor;
-import com.gitlab.saschabrunner.thermalmonitor.monitor.Monitor;
-import com.gitlab.saschabrunner.thermalmonitor.monitor.MonitorException;
-import com.gitlab.saschabrunner.thermalmonitor.monitor.ThermalMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.gitlab.saschabrunner.thermalmonitor.cpufreq.CPUFreqMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListAdapter;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListItem;
+import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.util.Constants;
+import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;

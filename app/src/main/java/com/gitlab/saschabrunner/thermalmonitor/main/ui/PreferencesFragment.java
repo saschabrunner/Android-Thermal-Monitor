@@ -1,12 +1,14 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.main.ui;
 
 import android.os.Bundle;
+
+import com.gitlab.saschabrunner.thermalmonitor.R;
 
 import androidx.preference.PreferenceFragmentCompat;
 
 
-public class Preferences extends PreferenceFragmentCompat {
-    public Preferences() {
+public class PreferencesFragment extends PreferenceFragmentCompat {
+    public PreferencesFragment() {
         // Required empty public constructor
     }
 

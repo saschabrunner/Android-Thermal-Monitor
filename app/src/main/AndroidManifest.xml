@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
-        android:name="com.gitlab.saschabrunner.thermalmonitor.App"
+        android:name="com.gitlab.saschabrunner.thermalmonitor.main.App"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_launcher"
@@ -14,7 +14,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".main.ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -23,10 +23,10 @@
         </activity>
 
         <service
-            android:name=".MonitorService"
+            android:name=".main.monitor.MonitorService"
             android:exported="false" />
 
-        <activity android:name=".Licenses" />
+        <activity android:name=".main.ui.LicensesActivity" />
     </application>
 
 </manifest>
