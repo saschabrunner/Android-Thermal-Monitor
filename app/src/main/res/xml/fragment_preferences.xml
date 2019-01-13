@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <CheckBoxPreference
-        app:key="rootEnabled"
-        app:title="Enable root functions" />
+    <PreferenceCategory app:title="Main">
+        <CheckBoxPreference
+            app:key="rootEnabled"
+            app:title="Enable root functions" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Thermal Monitor">
+        <CheckBoxPreference
+            app:dependency="rootEnabled"
+            app:key="thermalMonitorUseRoot"
+            app:title="Use root to access thermal zones" />
+
+        <EditTextPreference
+            app:key="thermalMonitorRefreshInterval"
+            app:title="Refresh interval (in ms)" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="CPU Frequency Monitor">
+        <EditTextPreference
+            app:key="cpuFreqMonitorRefreshInterval"
+            app:title="Refresh interval (in ms)" />
+    </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>

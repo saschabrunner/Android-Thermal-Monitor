@@ -12,6 +12,6 @@ public class PreferenceConstants {
     /* Defaults */
     public static final boolean DEF_ROOT_ENABLED = false;
     public static final boolean DEF_THERMAL_MONITOR_USE_ROOT = false;
-    public static final int DEF_THERMAL_MONITOR_REFRESH_INTERVAL = 1000;
-    public static final int DEF_CPU_FREQ_MONITOR_REFRESH_INTERVAL = 1000;
+    public static final String DEF_THERMAL_MONITOR_REFRESH_INTERVAL = "1000";
+    public static final String DEF_CPU_FREQ_MONITOR_REFRESH_INTERVAL = "1000";
 }

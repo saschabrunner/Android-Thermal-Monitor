@@ -15,7 +15,6 @@ import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorService;
 import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
-import com.gitlab.saschabrunner.thermalmonitor.thermal.ui.ThermalMonitorPreferencesFragment;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
 import androidx.annotation.RequiresApi;
@@ -162,13 +161,6 @@ public class MainActivity extends AppCompatActivity {
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.temporaryPreferencesView, new PreferencesFragment())
-                .commit();
-    }
-
-    public void showThermalMonitorPreferences(View view) {
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.temporaryPreferencesView, new ThermalMonitorPreferencesFragment())
                 .commit();
     }
 }
