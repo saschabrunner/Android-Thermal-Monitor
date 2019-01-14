@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -282,9 +281,9 @@ public class ThermalMonitor implements Runnable, Monitor {
                     PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT,
                     PreferenceConstants.DEF_THERMAL_MONITOR_USE_ROOT);
 
-            this.interaval = Integer.parseInt(Objects.requireNonNull(preferences.getString(
+            this.interaval = preferences.getInt(
                     PreferenceConstants.KEY_THERMAL_MONITOR_REFRESH_INTERVAL,
-                    PreferenceConstants.DEF_THERMAL_MONITOR_REFRESH_INTERVAL)));
+                    PreferenceConstants.DEF_THERMAL_MONITOR_REFRESH_INTERVAL);
 
             validate();
         }
