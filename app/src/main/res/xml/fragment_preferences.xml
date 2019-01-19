@@ -10,6 +10,10 @@
 
     <PreferenceCategory app:title="Thermal Monitor">
         <CheckBoxPreference
+            app:key="thermalMonitorEnabled"
+            app:title="Enable thermal monitoring" />
+
+        <CheckBoxPreference
             app:dependency="rootEnabled"
             app:key="thermalMonitorUseRoot"
             app:title="Use root to access thermal zones" />
@@ -23,6 +27,10 @@
     </PreferenceCategory>
 
     <PreferenceCategory app:title="CPU Frequency Monitor">
+        <CheckBoxPreference
+            app:key="cpuFreqMonitorEnabled"
+            app:title="Enable CPU frequency monitoring" />
+
         <SeekBarPreference
             android:defaultValue="1000"
             android:max="5000"

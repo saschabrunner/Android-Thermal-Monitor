@@ -20,6 +20,16 @@ public class GlobalPreferences {
                 PreferenceConstants.DEF_ROOT_ENABLED);
     }
 
+    public boolean thermalMonitorEnabled() {
+        return preferences.getBoolean(PreferenceConstants.KEY_THERMAL_MONITOR_ENABLED,
+                PreferenceConstants.DEF_THERMAL_MONITOR_ENABLED);
+    }
+
+    public boolean cpuFreqMonitorEnabled() {
+        return preferences.getBoolean(PreferenceConstants.KEY_CPU_FREQ_MONITOR_ENABLED,
+                PreferenceConstants.DEF_CPU_FREQ_MONITOR_ENABLED);
+    }
+
     public static void init(SharedPreferences globalPreferences) {
         if (instance == null) {
             instance = new GlobalPreferences(globalPreferences);

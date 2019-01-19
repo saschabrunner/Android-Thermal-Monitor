@@ -145,6 +145,21 @@ public class MonitorService extends Service {
     private void initMonitoring() {
         continueMonitoring();
 
+        try {
+            if (GlobalPreferences.getInstance().thermalMonitorEnabled()) {
+                initThermalMonitoring();
+            }
+
+            if (GlobalPreferences.getInstance().cpuFreqMonitorEnabled()) {
+                initCpuFreqMonitoring();
+            }
+        } catch (MonitorException e) {
+            Log.e(TAG, e.getMessage(this));
+            stopWithMessage("Monitor exited with exception (check compatibility)");
+        }
+    }
+
+    private void initThermalMonitoring() throws MonitorException {
         ThermalMonitor thermalMonitor;
         if (GlobalPreferences.getInstance().rootEnabled()) {
             Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
@@ -161,29 +176,25 @@ public class MonitorService extends Service {
             thermalMonitor = new ThermalMonitor();
         }
 
-        try {
-            if (thermalMonitor.checkSupported(Utils.getGlobalPreferences(this))
-                    == ThermalMonitor.FAILURE_REASON_OK) {
-                thermalMonitor.init(this, Utils.getGlobalPreferences(this));
-                monitors.add(thermalMonitor);
-                monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
-            }
-
-            CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
-            if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
-                    == CPUFreqMonitor.FAILURE_REASON_OK) {
-                cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
-                monitors.add(cpuFreqMonitor);
-                monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
-            }
-        } catch (MonitorException e) {
-            Log.e(TAG, e.getMessage(this));
-            stopWithMessage("Monitor exited with exception (check compatibility)");
-            return;
+        if (thermalMonitor.checkSupported(Utils.getGlobalPreferences(this))
+                == ThermalMonitor.FAILURE_REASON_OK) {
+            thermalMonitor.init(this, Utils.getGlobalPreferences(this));
+            monitors.add(thermalMonitor);
+            monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
+        } else {
+            stopWithMessage("Thermal monitor not supported with current configuration");
         }
+    }
 
-        for (Thread monitoringThread : monitoringThreads) {
-            monitoringThread.start();
+    private void initCpuFreqMonitoring() throws MonitorException {
+        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
+        if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
+                == CPUFreqMonitor.FAILURE_REASON_OK) {
+            cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
+            monitors.add(cpuFreqMonitor);
+            monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
+        } else {
+            stopWithMessage("CPU frequency monitor not supported with current configuration");
         }
     }
 

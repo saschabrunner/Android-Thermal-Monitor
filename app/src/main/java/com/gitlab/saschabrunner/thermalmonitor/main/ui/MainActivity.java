@@ -34,91 +34,13 @@ public class MainActivity extends AppCompatActivity {
     private void checkMonitoringAvailable() {
         boolean success = true;
 
-        ThermalMonitor thermalMonitor;
-        if (GlobalPreferences.getInstance().rootEnabled()) {
-            Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
-            try {
-                thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
-            } catch (RootAccessException e) {
-                Log.e(TAG, "Root access has been denied", e);
-                showInfoDialog("Root access denied", "Could not acquire root access");
-                return;
-            }
-        } else {
-            Log.v(TAG, "Root disabled, initializing Thermal Monitor without Root IPC");
-            thermalMonitor = new ThermalMonitor();
-        }
-
         try {
-            int thermalMonitoringAvailable =
-                    thermalMonitor.checkSupported(Utils.getGlobalPreferences(this));
-            switch (thermalMonitoringAvailable) {
-                case ThermalMonitor.FAILURE_REASON_OK:
-                    break;
-                case ThermalMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
-                    showInfoDialog("Thermal Monitoring disabled",
-                            "/sys/class/thermal does not exist");
-                    success = false;
-                    break;
-                case ThermalMonitor.FAILURE_REASON_NO_THERMAL_ZONES:
-                    showInfoDialog("Thermal Monitoring disabled",
-                            "Can't find any thermal zones in /sys/class/thermal");
-                    success = false;
-                    break;
-                case ThermalMonitor.FAILURE_REASON_TYPE_NO_PERMISSION:
-                    showInfoDialog("Thermal Monitoring disabled",
-                            "Can't read type of a thermal zone");
-                    success = false;
-                    break;
-                case ThermalMonitor.FAILURE_REASON_TEMP_NO_PERMISSION:
-                    showInfoDialog("Thermal Monitoring disabled",
-                            "Can't read temp of a thermal zone");
-                    success = false;
-                    break;
-                case ThermalMonitor.FAILURE_REASON_NO_ROOT_IPC:
-                    showInfoDialog("Thermal Monitoring disabled",
-                            "No root IPC object passed to monitor " +
-                                    "(root globally disabled?)");
-                    success = false;
-                    break;
-                case ThermalMonitor.FAILURE_REASON_TEMP_NOT_READABLE:
-                    showInfoDialog("Thermal Monitoring disabled",
-                            "Can't read temp of a thermal zone");
-                    success = false;
-                    break;
-                case ThermalMonitor.FAILURE_REASON_TYPE_NOT_READABLE:
-                    showInfoDialog("Thermal Monitoring disabled",
-                            "Can't read type of a thermal zone");
-                    success = false;
-                    break;
-                default:
-                    showInfoDialog("Thermal Monitoring disabled",
-                            "Unknown error");
-                    success = false;
-                    break;
+            if (GlobalPreferences.getInstance().thermalMonitorEnabled()) {
+                success &= checkThermalMonitoringAvailable();
             }
 
-            CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
-            int cpuFreqMonitoringAvailable =
-                    cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this));
-            switch (cpuFreqMonitoringAvailable) {
-                case CPUFreqMonitor.FAILURE_REASON_OK:
-                    break;
-                case CPUFreqMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
-                    showInfoDialog("CPU frequency monitoring disabled",
-                            "/sys/devices/system/cpu does not exist");
-                    success = false;
-                    break;
-                case CPUFreqMonitor.FAILURE_REASON_DIR_EMPTY:
-                    showInfoDialog("CPU frequency monitoring disabled",
-                            "Can't find any CPUs in /sys/devices/system/cpu");
-                    success = false;
-                    break;
-                case CPUFreqMonitor.FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION:
-                    showInfoDialog("CPU frequency monitoring disabled",
-                            "Can't read frequency of a CPU");
-                    success = false;
-                    break;
+            if (GlobalPreferences.getInstance().cpuFreqMonitorEnabled()) {
+                success &= checkCpuFreqMonitoringAvailable();
             }
         } catch (MonitorException e) {
             showInfoDialog("Monitor configuration invalid", e.getMessage(this));
@@ -127,8 +49,107 @@ public class MainActivity extends AppCompatActivity {
 
         if (success) {
             showInfoDialog("Checks succeeded",
-                    "All modules should be working with the current configuration.");
+                    "All enabled modules should be working with the current " +
+                            "configuration.");
         }
+    }
+
+    private boolean checkThermalMonitoringAvailable() throws MonitorException {
+        boolean success = true;
+
+        ThermalMonitor thermalMonitor;
+        if (GlobalPreferences.getInstance().rootEnabled()) {
+            Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
+            try {
+                thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
+            } catch (RootAccessException e) {
+                Log.e(TAG, "Root access has been denied", e);
+                showInfoDialog("Root access denied", "Could not acquire root access");
+                return false;
+            }
+        } else {
+            Log.v(TAG, "Root disabled, initializing Thermal Monitor without Root IPC");
+            thermalMonitor = new ThermalMonitor();
+        }
+
+        int thermalMonitoringAvailable =
+                thermalMonitor.checkSupported(Utils.getGlobalPreferences(this));
+        switch (thermalMonitoringAvailable) {
+            case ThermalMonitor.FAILURE_REASON_OK:
+                break;
+            case ThermalMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "/sys/class/thermal does not exist");
+                success = false;
+                break;
+            case ThermalMonitor.FAILURE_REASON_NO_THERMAL_ZONES:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Can't find any thermal zones in /sys/class/thermal");
+                success = false;
+                break;
+            case ThermalMonitor.FAILURE_REASON_TYPE_NO_PERMISSION:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Can't read type of a thermal zone");
+                success = false;
+                break;
+            case ThermalMonitor.FAILURE_REASON_TEMP_NO_PERMISSION:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Can't read temp of a thermal zone");
+                success = false;
+                break;
+            case ThermalMonitor.FAILURE_REASON_NO_ROOT_IPC:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "No root IPC object passed to monitor " +
+                                "(root globally disabled?)");
+                success = false;
+                break;
+            case ThermalMonitor.FAILURE_REASON_TEMP_NOT_READABLE:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Can't read temp of a thermal zone");
+                success = false;
+                break;
+            case ThermalMonitor.FAILURE_REASON_TYPE_NOT_READABLE:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Can't read type of a thermal zone");
+                success = false;
+                break;
+            default:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Unknown error");
+                success = false;
+                break;
+        }
+
+        return success;
+    }
+
+    private boolean checkCpuFreqMonitoringAvailable() throws MonitorException {
+        boolean success = true;
+
+        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
+        int cpuFreqMonitoringAvailable =
+                cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this));
+        switch (cpuFreqMonitoringAvailable) {
+            case CPUFreqMonitor.FAILURE_REASON_OK:
+                break;
+            case CPUFreqMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
+                showInfoDialog("CPU frequency monitoring disabled",
+                        "/sys/devices/system/cpu does not exist");
+                success = false;
+                break;
+            case CPUFreqMonitor.FAILURE_REASON_DIR_EMPTY:
+                showInfoDialog("CPU frequency monitoring disabled",
+                        "Can't find any CPUs in /sys/devices/system/cpu");
+                success = false;
+                break;
+            case CPUFreqMonitor.FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION:
+                showInfoDialog("CPU frequency monitoring disabled",
+                        "Can't read frequency of a CPU");
+                success = false;
+                break;
+        }
+
+        return success;
     }
 
     private void showInfoDialog(String title, String message) {
