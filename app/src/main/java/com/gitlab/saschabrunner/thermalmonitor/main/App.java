@@ -6,8 +6,12 @@ import android.util.Log;
 
 import com.gitlab.saschabrunner.thermalmonitor.BuildConfig;
 import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessDeniedException;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessDisabledException;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessIPCTimeoutException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootMain;
-import com.topjohnwu.superuser.BusyBox;
+import com.topjohnwu.superuser.BusyBoxInstaller;
 import com.topjohnwu.superuser.ContainerApp;
 import com.topjohnwu.superuser.Shell;
 
@@ -40,26 +44,36 @@ public class App extends ContainerApp {
 
         // Initialize root shell the first time it is requested
         if (super.getShell() == null) {
-            initRootShell();
+            try {
+                initRootShell();
+            } catch (RootAccessDeniedException e) {
+                Log.e(TAG, "Root access has been denied", e);
+                return null;
+            }
         }
 
         return super.getShell();
     }
 
-    private void initRootShell() {
-        // Use internal busybox
-        BusyBox.setup(this);
-
+    private void initRootShell() throws RootAccessDeniedException {
         // Configuration
+        Shell.Config.addInitializers(BusyBoxInstaller.class);
         Shell.Config.setFlags(Shell.FLAG_REDIRECT_STDERR);
         Shell.Config.verboseLogging(BuildConfig.DEBUG);
-        setShell(Shell.newInstance());
+
+
+        // Initialize shell
+        Shell shell = Shell.newInstance();
+        if (!shell.isRoot()) {
+            throw new RootAccessDeniedException();
+        }
+        setShell(shell);
     }
 
-    public IIPC getRootIpc() {
+    public IIPC getRootIpc() throws RootAccessException {
         if (!GlobalPreferences.getInstance().rootEnabled()) {
-            Log.w(TAG, "Requested root IPC even though root is disabled");
-            return null;
+            Log.e(TAG, "Requested root IPC even though root is disabled");
+            throw new RootAccessDisabledException();
         }
 
         if (rootIpc == null) {
@@ -69,7 +83,11 @@ public class App extends ContainerApp {
         return rootIpc;
     }
 
-    private void initRootProcess() {
+    private void initRootProcess() throws RootAccessException {
+        if (!Shell.rootAccess()) {
+            throw new RootAccessDeniedException();
+        }
+
         RootJava.cleanupCache(this);
         List<String> launchScript = RootJava.getLaunchScript(
                 this,
@@ -84,6 +102,9 @@ public class App extends ContainerApp {
         Shell.su(launchScript.toArray(new String[0])).submit();
 
         rootIpc = rootIpcReceiver.getIPC(30000);
+        if (rootIpc == null) {
+            throw new RootAccessIPCTimeoutException();
+        }
     }
 
     private static class IPCReceiver extends RootIPCReceiver<IIPC> {

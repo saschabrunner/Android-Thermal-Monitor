@@ -33,7 +33,11 @@ dependencies {
     implementation 'androidx.legacy:legacy-preference-v14:1.0.0'
     implementation 'androidx.preference:preference:1.1.0-alpha02'
     implementation 'eu.chainfire:librootjava:1.2.0'
-    implementation 'com.github.topjohnwu:libsu:2.1.2'
+
+    def libsuVersion = '2.2.0'
+    implementation "com.github.topjohnwu:libsu:${libsuVersion}"
+    implementation "com.github.topjohnwu.libsu:busybox:${libsuVersion}"
+
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'

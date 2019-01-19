@@ -23,6 +23,7 @@ import com.gitlab.saschabrunner.thermalmonitor.cpufreq.CPUFreqMonitor;
 import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListAdapter;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListItem;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
 import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
 import com.gitlab.saschabrunner.thermalmonitor.util.Constants;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
@@ -147,7 +148,13 @@ public class MonitorService extends Service {
         ThermalMonitor thermalMonitor;
         if (GlobalPreferences.getInstance().rootEnabled()) {
             Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
-            thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
+            try {
+                thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
+            } catch (RootAccessException e) {
+                Log.e(TAG, "Service could not acquire root access");
+                stopWithMessage("Service could not acquire root access");
+                return;
+            }
 
         } else {
             Log.v(TAG, "Root disabled, initializing Thermal Monitor without Root IPC");
@@ -171,13 +178,18 @@ public class MonitorService extends Service {
             }
         } catch (MonitorException e) {
             Log.e(TAG, e.getMessage(this));
-            stopSelf();
+            stopWithMessage("Monitor exited with exception (check compatibility)");
             return;
         }
 
         for (Thread monitoringThread : monitoringThreads) {
             monitoringThread.start();
         }
+    }
+
+    private void stopWithMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        stopSelf();
     }
 
     @Override
