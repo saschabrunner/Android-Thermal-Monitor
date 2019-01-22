@@ -157,6 +157,10 @@ public class MonitorService extends Service {
             Log.e(TAG, e.getMessage(this));
             stopWithMessage("Monitor exited with exception (check compatibility)");
         }
+
+        for (Thread monitoringThread : monitoringThreads) {
+            monitoringThread.start();
+        }
     }
 
     private void initThermalMonitoring() throws MonitorException {
