@@ -30,6 +30,6 @@ public class PreferenceConstants {
     public static final int DEF_OVERLAY_BACKGROUND_COLOR = 0x80FFFFFF;
     public static final int DEF_OVERLAY_TEXT_COLOR = Color.BLACK;
     public static final int DEF_OVERLAY_TEXT_SIZE = 24;
-    public static final int DEF_OVERLAY_LABEL_VISIBILITY = View.GONE;
+    public static final int DEF_OVERLAY_LABEL_VISIBILITY = View.VISIBLE;
     public static final int DEF_OVERLAY_LABEL_WIDTH = 260;
 }
