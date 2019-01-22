@@ -3,10 +3,10 @@ package com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.gitlab.saschabrunner.thermalmonitor.databinding.OverlayListItemBinding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,10 +17,12 @@ import androidx.recyclerview.widget.RecyclerView;
 public class OverlayListAdapter extends RecyclerView.Adapter<OverlayListAdapter.ViewHolder> {
     private static final String TAG = "OverlayListAdapter";
 
+    private OverlayConfig config;
     private List<OverlayListItem> items;
     private List<RecyclerView> recyclerViews;
 
-    public OverlayListAdapter() {
+    public OverlayListAdapter(OverlayConfig config) {
+        this.config = config;
         this.items = new ArrayList<>();
         this.recyclerViews = new ArrayList<>();
         setHasStableIds(true);
@@ -30,8 +32,11 @@ public class OverlayListAdapter extends RecyclerView.Adapter<OverlayListAdapter.
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         Log.v(TAG, "onCreateViewHolder called");
-        LinearLayout listItem = (LinearLayout) LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.overlay_list_item, parent, false);
+        OverlayListItemBinding listItem = OverlayListItemBinding.inflate(
+                LayoutInflater.from(parent.getContext()),
+                parent,
+                false);
+        listItem.setConfig(config);
 
         return new ViewHolder(listItem);
     }
@@ -94,11 +99,11 @@ public class OverlayListAdapter extends RecyclerView.Adapter<OverlayListAdapter.
         private final TextView label;
         private final TextView value;
 
-        public ViewHolder(@NonNull LinearLayout itemView) {
-            super(itemView);
+        public ViewHolder(@NonNull OverlayListItemBinding itemView) {
+            super(itemView.getRoot());
 
-            this.label = itemView.findViewById(R.id.overlayItemLabel);
-            this.value = itemView.findViewById(R.id.overlayItemValue);
+            this.label = itemView.getRoot().findViewById(R.id.overlayItemLabel);
+            this.value = itemView.getRoot().findViewById(R.id.overlayItemValue);
         }
 
         public TextView getLabel() {

@@ -1,6 +1,5 @@
 package com.gitlab.saschabrunner.thermalmonitor.main.monitor;
 
-import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -20,7 +19,9 @@ import android.widget.Toast;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.cpufreq.CPUFreqMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.databinding.OverlayBinding;
 import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayConfig;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListAdapter;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListItem;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
@@ -106,11 +107,13 @@ public class MonitorService extends Service {
     }
 
     private void initOverlay() {
+        OverlayConfig overlayConfig = new OverlayConfig(Utils.getGlobalPreferences(this));
+
         // Inflate layout
-        final LayoutInflater layoutInflater = LayoutInflater.from(this);
-        @SuppressLint("InflateParams")
-        View overlayView = layoutInflater.inflate(R.layout.overlay, null);
-        this.overlayView = overlayView;
+        OverlayBinding overlayViewBinding = OverlayBinding.inflate(LayoutInflater.from(this));
+        overlayViewBinding.setConfig(overlayConfig);
+        this.overlayView = overlayViewBinding.getRoot();
+
 
         // Create layout params
         WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -138,7 +141,7 @@ public class MonitorService extends Service {
         recyclerView.setItemAnimator(null);
 
         // Set adapter on list view
-        listAdapter = new OverlayListAdapter();
+        listAdapter = new OverlayListAdapter(overlayConfig);
         recyclerView.setAdapter(listAdapter);
     }
 
