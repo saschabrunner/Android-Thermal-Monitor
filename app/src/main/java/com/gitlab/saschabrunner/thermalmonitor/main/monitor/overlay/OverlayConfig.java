@@ -4,6 +4,8 @@ import android.content.SharedPreferences;
 
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
+import java.util.Objects;
+
 public class OverlayConfig {
     private int gravity;
     private int backgroundColor;
@@ -13,23 +15,31 @@ public class OverlayConfig {
     private int labelWidth;
 
     public OverlayConfig(SharedPreferences preferences) {
-        this.gravity = preferences.getInt(PreferenceConstants.KEY_OVERLAY_GRAVITY,
-                PreferenceConstants.DEF_OVERLAY_GRAVITY);
+        this.gravity = Integer.decode(Objects.requireNonNull(preferences.getString(
+                PreferenceConstants.KEY_OVERLAY_GRAVITY,
+                PreferenceConstants.DEF_OVERLAY_GRAVITY)));
 
-        this.backgroundColor = preferences.getInt(PreferenceConstants.KEY_OVERLAY_BACKGROUND_COLOR,
-                PreferenceConstants.DEF_OVERLAY_BACKGROUND_COLOR);
+        // Use Long.decode because value is unsigned 32 bit integer
+        this.backgroundColor = Long.decode(Objects.requireNonNull(preferences.getString(
+                PreferenceConstants.KEY_OVERLAY_BACKGROUND_COLOR,
+                PreferenceConstants.DEF_OVERLAY_BACKGROUND_COLOR))).intValue();
 
-        this.textColor = preferences.getInt(PreferenceConstants.KEY_OVERLAY_TEXT_COLOR,
-                PreferenceConstants.DEF_OVERLAY_TEXT_COLOR);
+        // Use Long.decode because value is unsigned 32 bit integer
+        this.textColor = Long.decode(Objects.requireNonNull(preferences.getString(
+                PreferenceConstants.KEY_OVERLAY_TEXT_COLOR,
+                PreferenceConstants.DEF_OVERLAY_TEXT_COLOR))).intValue();
 
-        this.textSize = preferences.getInt(PreferenceConstants.KEY_OVERLAY_TEXT_SIZE,
-                PreferenceConstants.DEF_OVERLAY_TEXT_SIZE);
+        this.textSize = Integer.parseInt(Objects.requireNonNull(preferences.getString(
+                PreferenceConstants.KEY_OVERLAY_TEXT_SIZE,
+                PreferenceConstants.DEF_OVERLAY_TEXT_SIZE)));
 
-        this.labelVisibility = preferences.getInt(PreferenceConstants.KEY_OVERLAY_LABEL_VISIBILITY,
-                PreferenceConstants.DEF_OVERLAY_LABEL_VISIBILITY);
+        this.labelVisibility = Integer.decode(Objects.requireNonNull(preferences.getString(
+                PreferenceConstants.KEY_OVERLAY_LABEL_VISIBILITY,
+                PreferenceConstants.DEF_OVERLAY_LABEL_VISIBILITY)));
 
-        this.labelWidth = preferences.getInt(PreferenceConstants.KEY_OVERLAY_LABEL_WIDTH,
-                PreferenceConstants.DEF_OVERLAY_LABEL_WIDTH);
+        this.labelWidth = Integer.parseInt(Objects.requireNonNull(preferences.getString(
+                PreferenceConstants.KEY_OVERLAY_LABEL_WIDTH,
+                PreferenceConstants.DEF_OVERLAY_LABEL_WIDTH)));
     }
 
     public int getGravity() {

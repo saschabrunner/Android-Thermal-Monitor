@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import androidx.annotation.IntDef;
 
@@ -186,9 +187,9 @@ public class CPUFreqMonitor implements Runnable, Monitor {
         private final int interval;
 
         private Preferences(SharedPreferences preferences) throws MonitorException {
-            this.interval = preferences.getInt(
+            this.interval = Integer.parseInt(Objects.requireNonNull(preferences.getString(
                     PreferenceConstants.KEY_CPU_FREQ_MONITOR_REFRESH_INTERVAL,
-                    PreferenceConstants.DEF_CPU_FREQ_MONITOR_REFRESH_INTERVAL);
+                    PreferenceConstants.DEF_CPU_FREQ_MONITOR_REFRESH_INTERVAL)));
 
             validate();
         }

@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -203,7 +204,7 @@ public class ThermalMonitor implements Runnable, Monitor {
             }
 
             try {
-                Thread.sleep(preferences.interaval);
+                Thread.sleep(preferences.interval);
             } catch (InterruptedException e) {
                 if (monitorService.isMonitoringRunning()) {
                     // No interrupt should happen except when monitor service quits
@@ -274,23 +275,23 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     private static class Preferences {
         private final boolean useRoot;
-        private final int interaval;
+        private final int interval;
 
         private Preferences(SharedPreferences preferences) throws MonitorException {
             this.useRoot = preferences.getBoolean(
                     PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT,
                     PreferenceConstants.DEF_THERMAL_MONITOR_USE_ROOT);
 
-            this.interaval = preferences.getInt(
+            this.interval = Integer.parseInt(Objects.requireNonNull(preferences.getString(
                     PreferenceConstants.KEY_THERMAL_MONITOR_REFRESH_INTERVAL,
-                    PreferenceConstants.DEF_THERMAL_MONITOR_REFRESH_INTERVAL);
+                    PreferenceConstants.DEF_THERMAL_MONITOR_REFRESH_INTERVAL)));
 
             validate();
         }
 
         private void validate() throws MonitorException {
             // Let's not allow faster refresh intervals
-            if (interaval < 500) {
+            if (interval < 500) {
                 throw new MonitorException(R.string.interval_must_be_at_least_500ms);
             }
         }

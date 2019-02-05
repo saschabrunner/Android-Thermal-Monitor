@@ -1,11 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="Main">
         <CheckBoxPreference
             app:key="rootEnabled"
             app:title="Enable root functions" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Overlay">
+        <EditTextPreference
+            app:key="overlayTextGravity"
+            app:title="Overlay position" />
+        <EditTextPreference
+            app:key="overlayBackgroundColor"
+            app:title="Background color and opacity" />
+        <EditTextPreference
+            app:key="overlayTextColor"
+            app:title="Text color" />
+        <EditTextPreference
+            app:key="overlayTextSize"
+            app:title="Text size" />
+        <EditTextPreference
+            app:key="overlayLabelVisibility"
+            app:title="Show labels" />
+        <EditTextPreference
+            app:key="overlayLabelWidth"
+            app:title="Label width" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Thermal Monitor">
@@ -18,11 +38,8 @@
             app:key="thermalMonitorUseRoot"
             app:title="Use root to access thermal zones" />
 
-        <SeekBarPreference
-            android:defaultValue="1000"
-            android:max="5000"
+        <EditTextPreference
             app:key="thermalMonitorRefreshInterval"
-            app:min="500"
             app:title="Refresh interval (in ms)" />
     </PreferenceCategory>
 
@@ -31,11 +48,8 @@
             app:key="cpuFreqMonitorEnabled"
             app:title="Enable CPU frequency monitoring" />
 
-        <SeekBarPreference
-            android:defaultValue="1000"
-            android:max="5000"
+        <EditTextPreference
             app:key="cpuFreqMonitorRefreshInterval"
-            app:min="500"
             app:title="Refresh interval (in ms)" />
     </PreferenceCategory>
 
