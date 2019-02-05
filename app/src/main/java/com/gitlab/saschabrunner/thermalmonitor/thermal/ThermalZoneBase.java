@@ -40,9 +40,7 @@ public abstract class ThermalZoneBase {
     }
 
     public int getId() {
-        String path = directory.getAbsolutePath();
-        String thermalZoneId = path.replace("/sys/class/thermal/thermal_zone", "");
-        return Integer.parseInt(thermalZoneId);
+        return getId(directory.getAbsolutePath());
     }
 
     @NonNull
@@ -57,5 +55,11 @@ public abstract class ThermalZoneBase {
 
     public static String getTemperatureFilePath(String thermalZonePath) {
         return thermalZonePath + "/temp";
+    }
+
+    public static int getId(String thermalZonePath) {
+        String thermalZoneId = thermalZonePath.replace(
+                "/sys/class/thermal/thermal_zone", "");
+        return Integer.parseInt(thermalZoneId);
     }
 }

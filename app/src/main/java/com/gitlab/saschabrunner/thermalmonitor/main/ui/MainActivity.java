@@ -82,9 +82,14 @@ public class MainActivity extends AppCompatActivity {
                         "/sys/class/thermal does not exist");
                 success = false;
                 break;
-            case ThermalMonitor.FAILURE_REASON_NO_THERMAL_ZONES:
+            case ThermalMonitor.FAILURE_REASON_NO_ENABLED_THERMAL_ZONES:
                 showInfoDialog("Thermal Monitoring disabled",
-                        "Can't find any thermal zones in /sys/class/thermal");
+                        "No valid thermal zones are enabled");
+                success = false;
+                break;
+            case ThermalMonitor.FAILURE_REASON_THERMAL_ZONES_NOT_READABLE:
+                showInfoDialog("Thermal Monitoring disabled",
+                        "Couldn't read thermal zones");
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_TYPE_NO_PERMISSION:

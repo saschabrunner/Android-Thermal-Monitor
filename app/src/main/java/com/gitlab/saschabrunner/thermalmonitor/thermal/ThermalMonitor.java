@@ -19,9 +19,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -32,21 +34,22 @@ public class ThermalMonitor implements Runnable, Monitor {
     private static final String THERMAL_ZONE_REGEX = "(thermal_zone)[0-9]+";
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_NO_THERMAL_ZONES,
+    @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_NO_ENABLED_THERMAL_ZONES,
             FAILURE_REASON_TYPE_NO_PERMISSION, FAILURE_REASON_TEMP_NO_PERMISSION,
             FAILURE_REASON_NO_ROOT_IPC, FAILURE_REASON_TYPE_NOT_READABLE,
-            FAILURE_REASON_TEMP_NOT_READABLE})
+            FAILURE_REASON_TEMP_NOT_READABLE, FAILURE_REASON_THERMAL_ZONES_NOT_READABLE})
     public @interface FAILURE_REASON {
     }
 
     public static final int FAILURE_REASON_OK = 0;
     public static final int FAILURE_REASON_DIR_NOT_EXISTS = 1;
-    public static final int FAILURE_REASON_NO_THERMAL_ZONES = 2;
+    public static final int FAILURE_REASON_NO_ENABLED_THERMAL_ZONES = 2;
     public static final int FAILURE_REASON_TYPE_NO_PERMISSION = 3;
     public static final int FAILURE_REASON_TEMP_NO_PERMISSION = 4;
     public static final int FAILURE_REASON_NO_ROOT_IPC = 5;
     public static final int FAILURE_REASON_TYPE_NOT_READABLE = 6;
     public static final int FAILURE_REASON_TEMP_NOT_READABLE = 7;
+    public static final int FAILURE_REASON_THERMAL_ZONES_NOT_READABLE = 8;
 
     private final IIPC rootIpc;
 
@@ -67,7 +70,7 @@ public class ThermalMonitor implements Runnable, Monitor {
     @FAILURE_REASON
     public int checkSupported(SharedPreferences monitorPreferences) throws MonitorException {
         // Preferences to check support with
-        Preferences preferences = new Preferences(monitorPreferences);
+        this.preferences = new Preferences(monitorPreferences);
 
         if (preferences.useRoot) {
             return checkSupportedRoot();
@@ -86,20 +89,20 @@ public class ThermalMonitor implements Runnable, Monitor {
         // Check if dirs for thermal zones are present
         File[] thermalZoneDirs = filterThermalZones(thermalZonesDir);
         if (thermalZoneDirs == null || thermalZoneDirs.length == 0) {
-            return FAILURE_REASON_NO_THERMAL_ZONES;
+            return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
         }
 
         // Check if required files are accessible for every thermal zone
         // Right now we assume same permissions for all thermal zones
         for (File zoneDir : thermalZoneDirs) {
             File typeFile =
-                    new File(ThermalZone.getTypeFilePath(zoneDir.getAbsolutePath()));
+                    new File(ThermalZoneBase.getTypeFilePath(zoneDir.getAbsolutePath()));
             if (!typeFile.canRead()) {
                 return FAILURE_REASON_TYPE_NO_PERMISSION;
             }
 
             File tempFile =
-                    new File(ThermalZone.getTemperatureFilePath(zoneDir.getAbsolutePath()));
+                    new File(ThermalZoneBase.getTemperatureFilePath(zoneDir.getAbsolutePath()));
             if (!tempFile.canRead()) {
                 return FAILURE_REASON_TEMP_NO_PERMISSION;
             }
@@ -119,11 +122,11 @@ public class ThermalMonitor implements Runnable, Monitor {
         try {
             thermalZoneDirs = filterThermalZonesRoot();
             if (thermalZoneDirs.isEmpty()) {
-                return FAILURE_REASON_NO_THERMAL_ZONES;
+                return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
             }
         } catch (RemoteException e) {
             Log.e(TAG, "Got exception while reading thermal zones", e);
-            return FAILURE_REASON_NO_THERMAL_ZONES;
+            return FAILURE_REASON_THERMAL_ZONES_NOT_READABLE;
         }
 
         // Check if type is available for every thermal zone
@@ -224,15 +227,25 @@ public class ThermalMonitor implements Runnable, Monitor {
     private File[] filterThermalZones(File thermalZonesDir) {
         return thermalZonesDir.listFiles((dir, name) -> {
             String lcName = name.toLowerCase();
+
+            // Check if user is interested in this thermal zone
+            String path = dir + "/" + lcName;
+            if (!preferences.thermalZoneIds.contains(ThermalZoneBase.getId(path))) {
+                return false;
+            }
+
             return lcName.matches(THERMAL_ZONE_REGEX);
         });
     }
 
-    private @NonNull List<String> filterThermalZonesRoot() throws RemoteException {
+    private @NonNull
+    List<String> filterThermalZonesRoot() throws RemoteException {
         List<String> files = rootIpc.listFiles(THERMAL_ZONES_DIR);
         List<String> filteredThermalZoneDirs = new ArrayList<>();
         for (String file : files) {
-            if (file.toLowerCase().matches(THERMAL_ZONES_DIR + "/" + THERMAL_ZONE_REGEX)) {
+            if (preferences.thermalZoneIds.contains(ThermalZoneBase.getId(file))
+                    && file.toLowerCase()
+                    .matches(THERMAL_ZONES_DIR + "/" + THERMAL_ZONE_REGEX)) {
                 filteredThermalZoneDirs.add(file);
             }
         }
@@ -276,6 +289,7 @@ public class ThermalMonitor implements Runnable, Monitor {
     private static class Preferences {
         private final boolean useRoot;
         private final int interval;
+        private final Set<Integer> thermalZoneIds;
 
         private Preferences(SharedPreferences preferences) throws MonitorException {
             this.useRoot = preferences.getBoolean(
@@ -285,6 +299,14 @@ public class ThermalMonitor implements Runnable, Monitor {
             this.interval = Integer.parseInt(Objects.requireNonNull(preferences.getString(
                     PreferenceConstants.KEY_THERMAL_MONITOR_REFRESH_INTERVAL,
                     PreferenceConstants.DEF_THERMAL_MONITOR_REFRESH_INTERVAL)));
+
+            Set<String> thermalZonesSet = Objects.requireNonNull(preferences.getStringSet(
+                    PreferenceConstants.KEY_THERMAL_MONITOR_THERMAL_ZONES,
+                    PreferenceConstants.DEF_THERMAL_MONITOR_THERMAL_ZONES));
+            this.thermalZoneIds = new HashSet<>();
+            for (String thermalZoneId : thermalZonesSet) {
+                this.thermalZoneIds.add(Integer.parseInt(thermalZoneId));
+            }
 
             validate();
         }
