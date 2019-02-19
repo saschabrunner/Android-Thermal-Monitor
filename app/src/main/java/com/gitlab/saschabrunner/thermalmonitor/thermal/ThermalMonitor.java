@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -87,8 +88,8 @@ public class ThermalMonitor implements Runnable, Monitor {
         }
 
         // Check if dirs for thermal zones are present
-        File[] thermalZoneDirs = filterThermalZones(thermalZonesDir);
-        if (thermalZoneDirs == null || thermalZoneDirs.length == 0) {
+        List<File> thermalZoneDirs = getFilteredThermalZoneDirs();
+        if (thermalZoneDirs.isEmpty()) {
             return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
         }
 
@@ -120,7 +121,7 @@ public class ThermalMonitor implements Runnable, Monitor {
         // Check if dirs for thermal zones are present
         List<String> thermalZoneDirs;
         try {
-            thermalZoneDirs = filterThermalZonesRoot();
+            thermalZoneDirs = getFilteredThermalZoneDirsRoot();
             if (thermalZoneDirs.isEmpty()) {
                 return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
             }
@@ -170,16 +171,21 @@ public class ThermalMonitor implements Runnable, Monitor {
 
         this.preferences = new Preferences(monitorPreferences);
         this.monitorService = monitorService;
-
         if (preferences.useRoot) {
-            this.thermalZones = getThermalZonesRoot();
+            try {
+                this.thermalZones = getThermalZonesRoot(getFilteredThermalZoneDirsRoot());
+            } catch (RemoteException e) {
+                Log.e(TAG, "Failed retrieving thermal zones using root", e);
+                throw new MonitorException(
+                        R.string.monitor_not_supported_with_supplied_preferences);
+            }
         } else {
-            this.thermalZones = getThermalZones();
+            this.thermalZones = getThermalZones(getFilteredThermalZoneDirs());
         }
         this.listItemByThermalZone = new HashMap<>();
         for (ThermalZoneBase thermalZone : thermalZones) {
             OverlayListItem listItem = new OverlayListItem();
-            listItem.setLabel(thermalZone.getType());
+            listItem.setLabel(thermalZone.getInfo().getType());
             listItemByThermalZone.put(thermalZone, listItem);
             monitorService.addListItem(listItem);
         }
@@ -218,50 +224,92 @@ public class ThermalMonitor implements Runnable, Monitor {
         }
     }
 
+    public List<ThermalZoneInfo> getThermalZoneInfos(SharedPreferences monitorPreferences)
+            throws MonitorException {
+        if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
+            throw new MonitorException(R.string.monitor_not_supported_with_supplied_preferences);
+        }
+
+        this.preferences = new Preferences(monitorPreferences);
+        if (preferences.useRoot) {
+            try {
+                this.thermalZones = getThermalZonesRoot(getThermalZoneDirsRoot());
+            } catch (RemoteException e) {
+                Log.e(TAG, "Failed retrieving thermal zones using root", e);
+                throw new MonitorException(
+                        R.string.monitor_not_supported_with_supplied_preferences);
+            }
+        } else {
+            this.thermalZones = getThermalZones(getThermalZoneDirs());
+        }
+
+        List<ThermalZoneInfo> infos = new ArrayList<>(this.thermalZones.size());
+        for (ThermalZoneBase thermalZone : this.thermalZones) {
+            infos.add(thermalZone.getInfo());
+        }
+        return infos;
+    }
+
     private void updateThermalZones() {
         for (ThermalZoneBase thermalZone : thermalZones) {
             thermalZone.updateTemperature();
         }
     }
 
-    private File[] filterThermalZones(File thermalZonesDir) {
-        return thermalZonesDir.listFiles((dir, name) -> {
-            String lcName = name.toLowerCase();
+    private List<File> getThermalZoneDirs() {
+        return Arrays.asList(new File(THERMAL_ZONES_DIR).listFiles((dir, name)
+                -> name.toLowerCase().matches(THERMAL_ZONE_REGEX)));
+    }
 
-            // Check if user is interested in this thermal zone
-            String path = dir + "/" + lcName;
-            if (!preferences.thermalZoneIds.contains(ThermalZoneBase.getId(path))) {
-                return false;
+    private List<File> getFilteredThermalZoneDirs() {
+        List<File> thermalZoneDirs = getThermalZoneDirs();
+        List<File> filteredThermalZoneDirs = new ArrayList<>();
+        for (File thermalZoneDir : thermalZoneDirs) {
+            // Check if thermal zone is enabled
+            if (preferences.thermalZoneIds
+                    .contains(ThermalZoneBase.getId(thermalZoneDir.getAbsolutePath()))) {
+                filteredThermalZoneDirs.add(thermalZoneDir);
             }
+        }
 
-            return lcName.matches(THERMAL_ZONE_REGEX);
-        });
+        return filteredThermalZoneDirs;
+    }
+
+    private List<String> getThermalZoneDirsRoot() throws RemoteException {
+        List<String> dirs = rootIpc.listFiles(THERMAL_ZONES_DIR);
+
+        List<String> thermalZoneDirs = new ArrayList<>();
+        for (String dir : dirs) {
+            // Check if directory is a thermal zone
+            if (!dir.toLowerCase()
+                    .matches(THERMAL_ZONES_DIR + "/" + THERMAL_ZONE_REGEX)) {
+                thermalZoneDirs.add(dir);
+            }
+        }
+
+        return thermalZoneDirs;
     }
 
     private @NonNull
-    List<String> filterThermalZonesRoot() throws RemoteException {
-        List<String> files = rootIpc.listFiles(THERMAL_ZONES_DIR);
+    List<String> getFilteredThermalZoneDirsRoot() throws RemoteException {
+        List<String> files = getThermalZoneDirsRoot();
         List<String> filteredThermalZoneDirs = new ArrayList<>();
         for (String file : files) {
-            if (preferences.thermalZoneIds.contains(ThermalZoneBase.getId(file))
-                    && file.toLowerCase()
-                    .matches(THERMAL_ZONES_DIR + "/" + THERMAL_ZONE_REGEX)) {
+            // Check if thermal zone is enabled
+            if (preferences.thermalZoneIds.contains(ThermalZoneBase.getId(file))) {
                 filteredThermalZoneDirs.add(file);
             }
         }
         return filteredThermalZoneDirs;
     }
 
-    private List<ThermalZoneBase> getThermalZones() {
-        File thermalZonesDir = new File(THERMAL_ZONES_DIR);
-        File[] thermalZoneDirs = filterThermalZones(thermalZonesDir);
-
-        List<ThermalZoneBase> thermalZones = new ArrayList<>(thermalZoneDirs.length);
+    private List<ThermalZoneBase> getThermalZones(List<File> thermalZoneDirs) {
+        List<ThermalZoneBase> thermalZones = new ArrayList<>(thermalZoneDirs.size());
         for (File dir : thermalZoneDirs) {
             try {
                 thermalZones.add(new ThermalZone(dir));
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Failed initializing thermal zones", e);
                 return Collections.emptyList();
             }
         }
@@ -269,10 +317,8 @@ public class ThermalMonitor implements Runnable, Monitor {
         return thermalZones;
     }
 
-    private List<ThermalZoneBase> getThermalZonesRoot() {
+    private List<ThermalZoneBase> getThermalZonesRoot(List<String> thermalZoneDirs) {
         try {
-            List<String> thermalZoneDirs = filterThermalZonesRoot();
-
             List<ThermalZoneBase> thermalZones = new ArrayList<>(thermalZoneDirs.size());
             for (String dir : thermalZoneDirs) {
                 thermalZones.add(new ThermalZoneRoot(new File(dir), rootIpc));
@@ -280,7 +326,7 @@ public class ThermalMonitor implements Runnable, Monitor {
 
             return thermalZones;
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Failed initializing thermal zones", e);
             return Collections.emptyList();
         }
 

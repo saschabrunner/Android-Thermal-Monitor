@@ -1,17 +1,17 @@
 package com.gitlab.saschabrunner.thermalmonitor.thermal;
 
-import java.io.File;
-
-import androidx.annotation.NonNull;
-
 public abstract class ThermalZoneBase {
-    private File directory;
+    private ThermalZoneInfo info;
 
-    public ThermalZoneBase(File sysfsDirectory) {
-        if (isValidSysfsDirectory(sysfsDirectory)) {
-            this.directory = sysfsDirectory;
-        } else {
-            throw new IllegalArgumentException("Passed file object does not point to thermal zone in sysfs");
+    public ThermalZoneBase(String thermalZonePath) {
+        this(thermalZonePath, "undefined");
+    }
+
+    public ThermalZoneBase(String thermalZonePath, String type) {
+        this.info = new ThermalZoneInfo(thermalZonePath, getId(thermalZonePath), type);
+        if (!isValidSysfsDirectory()) {
+            throw new IllegalArgumentException("Passed directory does not point to " +
+                    "thermal zone in sysfs");
         }
     }
 
@@ -19,34 +19,29 @@ public abstract class ThermalZoneBase {
 
     public abstract void updateTemperature();
 
-    public abstract String getType();
-
     public abstract int getLastTemperature();
 
-    private boolean isValidSysfsDirectory(File sysfsDirectory) {
+    public ThermalZoneInfo getInfo() {
+        return info;
+    }
+
+    private boolean isValidSysfsDirectory() {
         // Path must be "/sys/class/thermal/thermal_zone#" where # is one or more numbers
-        return sysfsDirectory
-                .getAbsolutePath()
+        return info.getDir()
                 .toLowerCase()
                 .matches("(/sys/class/thermal/thermal_zone)[0-9]+$");
     }
 
     protected String getTypeFilePath() {
-        return getTypeFilePath(directory.getAbsolutePath());
+        return getTypeFilePath(info.getDir());
     }
 
     protected String getTemperatureFilePath() {
-        return getTemperatureFilePath(directory.getAbsolutePath());
+        return getTemperatureFilePath(info.getDir());
     }
 
-    public int getId() {
-        return getId(directory.getAbsolutePath());
-    }
-
-    @NonNull
-    @Override
-    public String toString() {
-        return "Zone " + this.getId() + " (" + this.getType() + "): " + this.getLastTemperature();
+    protected void setType(String type) {
+        this.info = new ThermalZoneInfo(info.getDir(), info.getId(), type);
     }
 
     public static String getTypeFilePath(String thermalZonePath) {

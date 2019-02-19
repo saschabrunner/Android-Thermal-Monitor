@@ -13,15 +13,14 @@ public class ThermalZoneRoot extends ThermalZoneBase {
     private static final String TAG = "ThermalZoneRoot";
 
     private IIPC rootIpc;
-    private String type;
     private int rootIpcTemperatureFileId;
     private int lastTemperature;
 
     public ThermalZoneRoot(File sysfsDirectory, IIPC rootIpc) throws RemoteException {
-        super(sysfsDirectory);
+        super(sysfsDirectory.getAbsolutePath());
+        setType(readType());
 
         this.rootIpc = rootIpc;
-        this.type = readType();
         this.rootIpcTemperatureFileId = rootIpc.openFile(getTemperatureFilePath(), 10);
     }
 
@@ -49,13 +48,10 @@ public class ThermalZoneRoot extends ThermalZoneBase {
         try {
             this.lastTemperature = Integer.parseInt(rootIpc.readFile(rootIpcTemperatureFileId));
         } catch (RemoteException e) {
-            Log.e(TAG, "Couldn't read new temperature of thermal zone '" + type + "'", e);
+            Log.e(TAG, "Couldn't update temperature of thermal zone "
+                    + getInfo().getId() + " (" + getInfo().getType() + ")", e);
+            this.lastTemperature = -1;
         }
-    }
-
-    @Override
-    public String getType() {
-        return type;
     }
 
     @Override

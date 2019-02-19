@@ -38,6 +38,10 @@
             app:key="thermalMonitorUseRoot"
             app:title="Use root to access thermal zones" />
 
+        <MultiSelectListPreference
+            app:key="thermalMonitorThermalZones"
+            app:title="Select thermal zones to monitor" />
+
         <EditTextPreference
             app:key="thermalMonitorRefreshInterval"
             app:title="Refresh interval (in ms)" />

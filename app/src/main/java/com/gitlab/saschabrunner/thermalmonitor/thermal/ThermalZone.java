@@ -16,17 +16,14 @@ import java.nio.file.StandardOpenOption;
 public class ThermalZone extends ThermalZoneBase {
     private static final String TAG = "ThermalZone";
 
-    private String type;
-
     private FileChannel temperatureFileChannel;
     private ByteBuffer buf = ByteBuffer.allocate(10);
 
     private int lastTemperature;
 
     public ThermalZone(File sysfsDirectory) throws IOException {
-        super(sysfsDirectory);
-
-        this.type = readType();
+        super(sysfsDirectory.getAbsolutePath());
+        setType(readType());
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             temperatureFileChannel = FileChannel.open(Paths.get(getTemperatureFilePath()), StandardOpenOption.READ);
@@ -64,14 +61,10 @@ public class ThermalZone extends ThermalZoneBase {
             // Parse integer value
             lastTemperature = Integer.valueOf(new String(buf.array(), 0, length - 1));
         } catch (IOException e) {
-            Log.e(TAG, "Couldn't update temperature of thermal zone '" + type + "'", e);
+            Log.e(TAG, "Couldn't update temperature of thermal zone "
+                    + getInfo().getId() + " (" + getInfo().getType() + ")", e);
             lastTemperature = -1;
         }
-    }
-
-    @Override
-    public String getType() {
-        return type;
     }
 
     @Override

@@ -24,7 +24,7 @@ public class MonitorException extends Exception {
      * @return Message of the exception.
      */
     public String getMessage(Context context) {
-        if (resourceId >= 0) {
+        if (resourceId != -1) {
             return context.getString(resourceId);
         }
 
