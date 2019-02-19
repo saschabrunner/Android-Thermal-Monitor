@@ -7,12 +7,12 @@ import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 import java.util.Objects;
 
 public class OverlayConfig {
-    private int gravity;
-    private int backgroundColor;
-    private int textColor;
-    private int textSize;
-    private int labelVisibility;
-    private int labelWidth;
+    private final int gravity;
+    private final int backgroundColor;
+    private final int textColor;
+    private final int textSize;
+    private final int labelVisibility;
+    private final int labelWidth;
 
     public OverlayConfig(SharedPreferences preferences) {
         this.gravity = Integer.decode(Objects.requireNonNull(preferences.getString(

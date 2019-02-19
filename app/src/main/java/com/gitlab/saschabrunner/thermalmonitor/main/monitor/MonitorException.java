@@ -6,7 +6,7 @@ import androidx.annotation.StringRes;
 
 public class MonitorException extends Exception {
     @StringRes
-    private int resourceId;
+    private final int resourceId;
 
     public MonitorException(@StringRes int resourceId) {
         super();

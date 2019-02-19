@@ -31,7 +31,7 @@ public class CPU {
     private File directory;
     private FileChannel stateFileChannel;
 
-    private ByteBuffer buf = ByteBuffer.allocate(20);
+    private final ByteBuffer buf = ByteBuffer.allocate(20);
 
     @STATE
     private int lastState;

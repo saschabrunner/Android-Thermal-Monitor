@@ -9,7 +9,7 @@ public class GlobalPreferences {
     private static final String TAG = "GlobalPreferences";
     private static GlobalPreferences instance;
 
-    private SharedPreferences preferences;
+    private final SharedPreferences preferences;
 
     private GlobalPreferences(SharedPreferences preferences) {
         this.preferences = preferences;

@@ -17,7 +17,7 @@ public class ThermalZone extends ThermalZoneBase {
     private static final String TAG = "ThermalZone";
 
     private FileChannel temperatureFileChannel;
-    private ByteBuffer buf = ByteBuffer.allocate(10);
+    private final ByteBuffer buf = ByteBuffer.allocate(10);
 
     private int lastTemperature;
     private int factor; // Factor needed to convert sensor value to degree celsius

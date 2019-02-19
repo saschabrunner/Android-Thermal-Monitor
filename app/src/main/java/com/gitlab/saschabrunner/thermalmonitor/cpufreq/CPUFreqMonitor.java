@@ -47,6 +47,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
     }
 
     @Override
+    @FAILURE_REASON
     public int checkSupported(SharedPreferences monitorPreferences) throws MonitorException {
         // Validate preferences
         Preferences preferences = new Preferences(monitorPreferences);

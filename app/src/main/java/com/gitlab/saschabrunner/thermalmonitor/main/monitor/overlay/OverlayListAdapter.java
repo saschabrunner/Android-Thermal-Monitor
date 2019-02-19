@@ -17,9 +17,9 @@ import androidx.recyclerview.widget.RecyclerView;
 public class OverlayListAdapter extends RecyclerView.Adapter<OverlayListAdapter.ViewHolder> {
     private static final String TAG = "OverlayListAdapter";
 
-    private OverlayConfig config;
-    private List<OverlayListItem> items;
-    private List<RecyclerView> recyclerViews;
+    private final OverlayConfig config;
+    private final List<OverlayListItem> items;
+    private final List<RecyclerView> recyclerViews;
 
     public OverlayListAdapter(OverlayConfig config) {
         this.config = config;
