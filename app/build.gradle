@@ -37,7 +37,7 @@ dependencies {
     implementation 'androidx.preference:preference:1.1.0-alpha03'
     implementation 'eu.chainfire:librootjava:1.2.0'
 
-    def libsuVersion = '2.2.0'
+    def libsuVersion = '2.3.1'
     implementation "com.github.topjohnwu:libsu:${libsuVersion}"
     implementation "com.github.topjohnwu.libsu:busybox:${libsuVersion}"
 

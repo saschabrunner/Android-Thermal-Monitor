@@ -25,6 +25,7 @@ import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayConfi
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListAdapter;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListItem;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
 import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
 import com.gitlab.saschabrunner.thermalmonitor.util.Constants;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
@@ -157,7 +158,7 @@ public class MonitorService extends Service {
                 initCpuFreqMonitoring();
             }
         } catch (MonitorException e) {
-            Log.e(TAG, e.getMessage(this));
+            Log.e(TAG, e.getMessage(this), e);
             stopWithMessage("Monitor exited with exception (check compatibility)");
         }
 
@@ -171,9 +172,9 @@ public class MonitorService extends Service {
         if (GlobalPreferences.getInstance().rootEnabled()) {
             Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
             try {
-                thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
+                thermalMonitor = new ThermalMonitor(RootIPCSingleton.getInstance(this));
             } catch (RootAccessException e) {
-                Log.e(TAG, "Service could not acquire root access");
+                Log.e(TAG, "Service could not acquire root access", e);
                 stopWithMessage("Service could not acquire root access");
                 return;
             }

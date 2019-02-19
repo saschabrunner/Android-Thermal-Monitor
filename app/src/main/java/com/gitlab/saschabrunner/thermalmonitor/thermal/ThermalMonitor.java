@@ -89,7 +89,7 @@ public class ThermalMonitor implements Runnable, Monitor {
         }
 
         // Check if dirs for thermal zones are present
-        List<File> thermalZoneDirs = getFilteredThermalZoneDirs();
+        List<File> thermalZoneDirs = getThermalZoneDirs();
         if (thermalZoneDirs.isEmpty()) {
             return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
         }
@@ -122,7 +122,7 @@ public class ThermalMonitor implements Runnable, Monitor {
         // Check if dirs for thermal zones are present
         List<String> thermalZoneDirs;
         try {
-            thermalZoneDirs = getFilteredThermalZoneDirsRoot();
+            thermalZoneDirs = getThermalZoneDirsRoot();
             if (thermalZoneDirs.isEmpty()) {
                 return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
             }
@@ -282,7 +282,7 @@ public class ThermalMonitor implements Runnable, Monitor {
         List<String> thermalZoneDirs = new ArrayList<>();
         for (String dir : dirs) {
             // Check if directory is a thermal zone
-            if (!dir.toLowerCase()
+            if (dir.toLowerCase()
                     .matches(THERMAL_ZONES_DIR + "/" + THERMAL_ZONE_REGEX)) {
                 thermalZoneDirs.add(dir);
             }

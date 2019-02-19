@@ -19,9 +19,8 @@ public class ThermalZoneRoot extends ThermalZoneBase {
 
     public ThermalZoneRoot(File sysfsDirectory, IIPC rootIpc) throws RemoteException {
         super(sysfsDirectory.getAbsolutePath());
-        setType(readType());
-
         this.rootIpc = rootIpc;
+        setType(readType());
         this.rootIpcTemperatureFileId = rootIpc.openFile(getTemperatureFilePath(), 10);
         this.factor = detectFactor(readRawTemperature());
     }

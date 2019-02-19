@@ -15,6 +15,7 @@ import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorService;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
 import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
@@ -61,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
         if (GlobalPreferences.getInstance().rootEnabled()) {
             Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
             try {
-                thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
+                thermalMonitor = new ThermalMonitor(RootIPCSingleton.getInstance(this));
             } catch (RootAccessException e) {
                 Log.e(TAG, "Root access has been denied", e);
                 showInfoDialog("Root access denied", "Could not acquire root access");
