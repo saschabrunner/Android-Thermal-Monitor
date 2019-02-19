@@ -3,9 +3,12 @@ package com.gitlab.saschabrunner.thermalmonitor.thermal;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.main.ui.PreferencesFragment;
 import com.gitlab.saschabrunner.thermalmonitor.main.ui.PreferencesInitializer;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
@@ -24,7 +27,19 @@ public class ThermalMonitorPreferencesInitializer implements PreferencesInitiali
         MultiSelectListPreference zones =
                 fragment.findPreference(PreferenceConstants.KEY_THERMAL_MONITOR_THERMAL_ZONES);
         zones.setOnPreferenceClickListener(preference -> {
-            ThermalMonitor monitor = new ThermalMonitor();
+            ThermalMonitor monitor;
+            if (GlobalPreferences.getInstance().rootEnabled()) {
+                try {
+                    monitor = new ThermalMonitor(
+                            RootIPCSingleton.getInstance(fragment.getContext()));
+                } catch (RootAccessException e) {
+                    Log.e(TAG, "Could not acquire root access", e);
+                    return false;
+                }
+            } else {
+                monitor = new ThermalMonitor();
+            }
+
             List<ThermalZoneInfo> thermalZoneInfos;
             try {
                 thermalZoneInfos = monitor.getThermalZoneInfos(
