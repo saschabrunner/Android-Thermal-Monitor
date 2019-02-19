@@ -1,6 +1,7 @@
 package com.gitlab.saschabrunner.thermalmonitor.thermal;
 
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.main.ui.PreferencesFragment;
@@ -13,17 +14,23 @@ import java.util.List;
 import androidx.preference.MultiSelectListPreference;
 
 public class ThermalMonitorPreferencesInitializer implements PreferencesInitializer {
+    private static final String TAG = "ThermalMonitorPrefInit";
+
     @Override
     public void init(PreferencesFragment fragment, SharedPreferences preferences) {
         // Load available thermal zones on click with current settings
-        MultiSelectListPreference zones = fragment.findPreference(PreferenceConstants.KEY_THERMAL_MONITOR_THERMAL_ZONES);
+        /* TODO: It's the easiest way to load the thermal zones respecting the current user
+         * settings, but it's slow and should be replaced */
+        MultiSelectListPreference zones =
+                fragment.findPreference(PreferenceConstants.KEY_THERMAL_MONITOR_THERMAL_ZONES);
         zones.setOnPreferenceClickListener(preference -> {
             ThermalMonitor monitor = new ThermalMonitor();
-            List<ThermalZoneInfo> thermalZoneInfos = null;
+            List<ThermalZoneInfo> thermalZoneInfos;
             try {
-                thermalZoneInfos = monitor.getThermalZoneInfos(Utils.getGlobalPreferences(preference.getContext()));
+                thermalZoneInfos = monitor.getThermalZoneInfos(
+                        Utils.getGlobalPreferences(preference.getContext()));
             } catch (MonitorException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Couldn't get thermal zones", e);
                 return false;
             }
 

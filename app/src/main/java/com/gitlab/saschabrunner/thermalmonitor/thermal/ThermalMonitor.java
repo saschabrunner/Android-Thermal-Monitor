@@ -19,6 +19,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -314,22 +315,36 @@ public class ThermalMonitor implements Runnable, Monitor {
             }
         }
 
+        Collections.sort(thermalZones, new ThermalZoneComparator());
         return thermalZones;
     }
 
     private List<ThermalZoneBase> getThermalZonesRoot(List<String> thermalZoneDirs) {
+        List<ThermalZoneBase> thermalZones = new ArrayList<>(thermalZoneDirs.size());
         try {
-            List<ThermalZoneBase> thermalZones = new ArrayList<>(thermalZoneDirs.size());
             for (String dir : thermalZoneDirs) {
                 thermalZones.add(new ThermalZoneRoot(new File(dir), rootIpc));
             }
-
-            return thermalZones;
         } catch (RemoteException e) {
             Log.e(TAG, "Failed initializing thermal zones", e);
             return Collections.emptyList();
         }
 
+        Collections.sort(thermalZones, new ThermalZoneComparator());
+        return thermalZones;
+    }
+
+    private static class ThermalZoneComparator implements Comparator<ThermalZoneBase> {
+        @Override
+        public int compare(ThermalZoneBase o1, ThermalZoneBase o2) {
+            if (o1.getInfo().getId() > o2.getInfo().getId()) {
+                return 1;
+            } else if (o1.getInfo().getId() < o2.getInfo().getId()) {
+                return -1;
+            }
+
+            return 0;
+        }
     }
 
     private static class Preferences {
