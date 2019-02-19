@@ -15,6 +15,7 @@ public class ThermalZoneRoot extends ThermalZoneBase {
     private IIPC rootIpc;
     private int rootIpcTemperatureFileId;
     private int lastTemperature;
+    private int factor;
 
     public ThermalZoneRoot(File sysfsDirectory, IIPC rootIpc) throws RemoteException {
         super(sysfsDirectory.getAbsolutePath());
@@ -22,6 +23,7 @@ public class ThermalZoneRoot extends ThermalZoneBase {
 
         this.rootIpc = rootIpc;
         this.rootIpcTemperatureFileId = rootIpc.openFile(getTemperatureFilePath(), 10);
+        this.factor = detectFactor(readRawTemperature());
     }
 
     private String readType() throws RemoteException {
@@ -32,6 +34,10 @@ public class ThermalZoneRoot extends ThermalZoneBase {
         }
 
         return type.get(0);
+    }
+
+    private int readRawTemperature() throws RemoteException {
+        return Integer.parseInt(rootIpc.readFile(rootIpcTemperatureFileId));
     }
 
     @Override
@@ -46,7 +52,7 @@ public class ThermalZoneRoot extends ThermalZoneBase {
     @Override
     public void updateTemperature() {
         try {
-            this.lastTemperature = Integer.parseInt(rootIpc.readFile(rootIpcTemperatureFileId));
+            this.lastTemperature = readRawTemperature() / factor;
         } catch (RemoteException e) {
             Log.e(TAG, "Couldn't update temperature of thermal zone "
                     + getInfo().getId() + " (" + getInfo().getType() + ")", e);

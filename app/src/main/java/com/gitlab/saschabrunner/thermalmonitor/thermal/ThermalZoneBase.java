@@ -44,6 +44,18 @@ public abstract class ThermalZoneBase {
         this.info = new ThermalZoneInfo(info.getDir(), info.getId(), type);
     }
 
+    protected static int detectFactor(int rawTemperature) {
+        if (rawTemperature > 10000) {
+            return 1000;
+        } else if (rawTemperature > 1000) {
+            return 100;
+        } else if (rawTemperature > 100) {
+            return 10;
+        } else {
+            return 1;
+        }
+    }
+
     public static String getTypeFilePath(String thermalZonePath) {
         return thermalZonePath + "/type";
     }
