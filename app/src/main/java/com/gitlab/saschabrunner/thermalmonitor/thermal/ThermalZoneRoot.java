@@ -1,4 +1,4 @@
-package com.gitlab.saschabrunner.thermalmonitor.monitor;
+package com.gitlab.saschabrunner.thermalmonitor.thermal;
 
 import android.os.RemoteException;
 import android.util.Log;
@@ -13,16 +13,16 @@ public class ThermalZoneRoot extends ThermalZoneBase {
     private static final String TAG = "ThermalZoneRoot";
 
     private IIPC rootIpc;
-    private String type;
     private int rootIpcTemperatureFileId;
     private int lastTemperature;
+    private int factor;
 
     public ThermalZoneRoot(File sysfsDirectory, IIPC rootIpc) throws RemoteException {
-        super(sysfsDirectory);
-
+        super(sysfsDirectory.getAbsolutePath());
         this.rootIpc = rootIpc;
-        this.type = readType();
+        setType(readType());
         this.rootIpcTemperatureFileId = rootIpc.openFile(getTemperatureFilePath(), 10);
+        this.factor = detectFactor(readRawTemperature());
     }
 
     private String readType() throws RemoteException {
@@ -33,6 +33,10 @@ public class ThermalZoneRoot extends ThermalZoneBase {
         }
 
         return type.get(0);
+    }
+
+    private int readRawTemperature() throws RemoteException {
+        return Integer.parseInt(rootIpc.readFile(rootIpcTemperatureFileId));
     }
 
     @Override
@@ -47,15 +51,12 @@ public class ThermalZoneRoot extends ThermalZoneBase {
     @Override
     public void updateTemperature() {
         try {
-            this.lastTemperature = Integer.parseInt(rootIpc.readFile(rootIpcTemperatureFileId));
+            this.lastTemperature = readRawTemperature() / factor;
         } catch (RemoteException e) {
-            Log.e(TAG, "Couldn't read new temperature of thermal zone '" + type + "'", e);
+            Log.e(TAG, "Couldn't update temperature of thermal zone "
+                    + getInfo().getId() + " (" + getInfo().getType() + ")", e);
+            this.lastTemperature = -1;
         }
-    }
-
-    @Override
-    public String getType() {
-        return type;
     }
 
     @Override

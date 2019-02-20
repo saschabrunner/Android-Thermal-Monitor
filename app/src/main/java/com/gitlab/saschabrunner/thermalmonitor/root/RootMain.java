@@ -29,7 +29,7 @@ public class RootMain {
         RootJava.restoreOriginalLdLibraryPath();
 
         IBinder ipc = new IIPC.Stub() {
-            private List<FileChannel> openFiles = new ArrayList<>();
+            private final List<FileChannel> openFiles = new ArrayList<>();
             private ByteBuffer fileChannelReadBuffer;
             private final Object readBufferLock = new Object();
 

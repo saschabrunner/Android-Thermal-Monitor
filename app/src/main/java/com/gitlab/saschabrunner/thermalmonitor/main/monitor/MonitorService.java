@@ -1,6 +1,5 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.main.monitor;
 
-import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -18,12 +17,24 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.gitlab.saschabrunner.thermalmonitor.monitor.CPUFreqMonitor;
-import com.gitlab.saschabrunner.thermalmonitor.monitor.Monitor;
-import com.gitlab.saschabrunner.thermalmonitor.monitor.ThermalMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.gitlab.saschabrunner.thermalmonitor.cpufreq.CPUFreqMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.databinding.OverlayBinding;
+import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayConfig;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListAdapter;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListItem;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
+import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
+import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.util.Constants;
+import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -33,7 +44,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class MonitorService extends Service {
+public class MonitorService extends Service implements MonitorController {
     private static final String TAG = "MonitorService";
 
     private final Lock mutex = new ReentrantLock();
@@ -48,6 +59,7 @@ public class MonitorService extends Service {
     private View overlayView;
     private NotificationCompat.Builder notificationBuilder;
     private OverlayListAdapter listAdapter;
+    private Map<MonitorItem, OverlayListItem> overlayListItemByMonitorItem = new HashMap<>();
 
     @Override
     public void onCreate() {
@@ -100,11 +112,13 @@ public class MonitorService extends Service {
     }
 
     private void initOverlay() {
+        OverlayConfig overlayConfig = new OverlayConfig(Utils.getGlobalPreferences(this));
+
         // Inflate layout
-        final LayoutInflater layoutInflater = LayoutInflater.from(this);
-        @SuppressLint("InflateParams")
-        View overlayView = layoutInflater.inflate(R.layout.overlay, null);
-        this.overlayView = overlayView;
+        OverlayBinding overlayViewBinding = OverlayBinding.inflate(LayoutInflater.from(this));
+        overlayViewBinding.setConfig(overlayConfig);
+        this.overlayView = overlayViewBinding.getRoot();
+
 
         // Create layout params
         WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -132,17 +146,42 @@ public class MonitorService extends Service {
         recyclerView.setItemAnimator(null);
 
         // Set adapter on list view
-        listAdapter = new OverlayListAdapter();
+        listAdapter = new OverlayListAdapter(overlayConfig);
         recyclerView.setAdapter(listAdapter);
     }
 
     private void initMonitoring() {
         continueMonitoring();
 
+        try {
+            if (GlobalPreferences.getInstance().thermalMonitorEnabled()) {
+                initThermalMonitoring();
+            }
+
+            if (GlobalPreferences.getInstance().cpuFreqMonitorEnabled()) {
+                initCpuFreqMonitoring();
+            }
+        } catch (MonitorException e) {
+            Log.e(TAG, e.getMessage(this), e);
+            stopWithMessage("Monitor exited with exception (check compatibility)");
+        }
+
+        for (Thread monitoringThread : monitoringThreads) {
+            monitoringThread.start();
+        }
+    }
+
+    private void initThermalMonitoring() throws MonitorException {
         ThermalMonitor thermalMonitor;
         if (GlobalPreferences.getInstance().rootEnabled()) {
             Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
-            thermalMonitor = new ThermalMonitor(Utils.getApp(this).getRootIpc());
+            try {
+                thermalMonitor = new ThermalMonitor(RootIPCSingleton.getInstance(this));
+            } catch (RootAccessException e) {
+                Log.e(TAG, "Service could not acquire root access", e);
+                stopWithMessage("Service could not acquire root access");
+                return;
+            }
 
         } else {
             Log.v(TAG, "Root disabled, initializing Thermal Monitor without Root IPC");
@@ -154,19 +193,26 @@ public class MonitorService extends Service {
             thermalMonitor.init(this, Utils.getGlobalPreferences(this));
             monitors.add(thermalMonitor);
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
+        } else {
+            stopWithMessage("Thermal monitor not supported with current configuration");
         }
+    }
 
-        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
+    private void initCpuFreqMonitoring() throws MonitorException {
+        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
         if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
                 == CPUFreqMonitor.FAILURE_REASON_OK) {
             cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
             monitors.add(cpuFreqMonitor);
             monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
+        } else {
+            stopWithMessage("CPU frequency monitor not supported with current configuration");
         }
+    }
 
-        for (Thread monitoringThread : monitoringThreads) {
-            monitoringThread.start();
-        }
+    private void stopWithMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        stopSelf();
     }
 
     @Override
@@ -238,23 +284,32 @@ public class MonitorService extends Service {
         }
     }
 
-    public void addListItem(OverlayListItem listItem) {
+    @Override
+    public void addItem(MonitorItem item) {
+        OverlayListItem listItem = new OverlayListItem();
+        monitorItemToOverlayListItem(item, listItem);
         listAdapter.addListItem(listItem);
+        overlayListItemByMonitorItem.put(item, listItem);
     }
 
-    public void updateListItem(OverlayListItem listItem) {
+    @Override
+    public void updateItem(MonitorItem item) {
+        OverlayListItem listItem = Objects.requireNonNull(overlayListItemByMonitorItem.get(item));
+        monitorItemToOverlayListItem(item, listItem);
         listAdapter.updateListItem(listItem);
     }
 
-    /**
-     * Called by specific monitor thread to check if it should pause.
-     *
-     * @return true, when the monitoring service is paused.
-     */
-    public boolean isMonitoringPaused() {
+    private void monitorItemToOverlayListItem(
+            MonitorItem monitorItem, OverlayListItem overlayListItem) {
+        overlayListItem.setLabel(monitorItem.getName());
+        overlayListItem.setValue(monitorItem.getValue());
+    }
+
+    @Override
+    public boolean isRunning() {
         mutex.lock();
         try {
-            return monitoringPaused;
+            return monitoringRunning;
         } finally {
             mutex.unlock();
         }
@@ -263,23 +318,15 @@ public class MonitorService extends Service {
     /**
      * If the monitoring service is paused, this method will block until the service is continued.
      */
+    @Override
     public void awaitNotPaused() {
         mutex.lock();
         try {
-            if (isMonitoringPaused()) {
+            if (monitoringPaused) {
                 notPaused.await();
             }
         } catch (InterruptedException e) {
             // Nothing to do
-        } finally {
-            mutex.unlock();
-        }
-    }
-
-    public boolean isMonitoringRunning() {
-        mutex.lock();
-        try {
-            return monitoringRunning;
         } finally {
             mutex.unlock();
         }

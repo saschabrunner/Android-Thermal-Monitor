@@ -5,4 +5,8 @@
     <string name="start_service">start service</string>
     <string name="stop_service">stop service</string>
     <string name="licenses">Licenses</string>
+    <string name="interval_must_be_at_least_500ms">Interval must be at least 500ms</string>
+    <string name="monitor_not_supported_with_supplied_preferences">Monitor not supported with supplied preferences</string>
+    <string name="preferences">Preferences</string>
+    <string name="check_compatibility">Check compatibility</string>
 </resources>

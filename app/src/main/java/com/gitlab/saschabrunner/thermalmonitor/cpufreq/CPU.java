@@ -1,4 +1,4 @@
-package com.gitlab.saschabrunner.thermalmonitor.monitor;
+package com.gitlab.saschabrunner.thermalmonitor.cpufreq;
 
 import android.os.Build;
 import android.util.Log;
@@ -31,7 +31,7 @@ public class CPU {
     private File directory;
     private FileChannel stateFileChannel;
 
-    private ByteBuffer buf = ByteBuffer.allocate(20);
+    private final ByteBuffer buf = ByteBuffer.allocate(20);
 
     @STATE
     private int lastState;

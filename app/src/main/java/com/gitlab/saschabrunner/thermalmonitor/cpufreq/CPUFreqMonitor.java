@@ -1,11 +1,15 @@
-package com.gitlab.saschabrunner.thermalmonitor.monitor;
+package com.gitlab.saschabrunner.thermalmonitor.cpufreq;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.gitlab.saschabrunner.thermalmonitor.MonitorService;
-import com.gitlab.saschabrunner.thermalmonitor.OverlayListItem;
 import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.Monitor;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorController;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorItem;
+import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import androidx.annotation.IntDef;
 
@@ -34,15 +39,22 @@ public class CPUFreqMonitor implements Runnable, Monitor {
     public static final int FAILURE_REASON_DIR_EMPTY = 2;
     public static final int FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION = 3;
 
-    private MonitorService monitorService;
+    private Context context;
+    private Preferences preferences;
+    private MonitorController controller;
     private List<CPU> cpus;
-    private Map<CPU, OverlayListItem> listItemByCpu;
+    private Map<CPU, MonitorItem> monitorItemByCpu;
 
-    public CPUFreqMonitor() {
+    public CPUFreqMonitor(Context context) {
+        this.context = context;
     }
 
     @Override
-    public int checkSupported(SharedPreferences monitorPreferences) {
+    @FAILURE_REASON
+    public int checkSupported(SharedPreferences monitorPreferences) throws MonitorException {
+        // Validate preferences
+        Preferences preferences = new Preferences(monitorPreferences);
+
         // Check if dir is present
         File cpusDir = new File("/sys/devices/system/cpu");
         if (!cpusDir.exists()) {
@@ -75,19 +87,21 @@ public class CPUFreqMonitor implements Runnable, Monitor {
     }
 
     @Override
-    public void init(MonitorService monitorService, SharedPreferences monitorPreferences) {
+    public void init(MonitorController controller, SharedPreferences monitorPreferences)
+            throws MonitorException {
         if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
-            throw new RuntimeException("Monitor not supported with supplied preferences");
+            throw new MonitorException(R.string.monitor_not_supported_with_supplied_preferences);
         }
 
-        this.monitorService = monitorService;
+        this.preferences = new Preferences(monitorPreferences);
+        this.controller = controller;
         this.cpus = getCpus();
-        this.listItemByCpu = new HashMap<>();
+        this.monitorItemByCpu = new HashMap<>();
         for (CPU cpu : cpus) {
-            OverlayListItem listItem = new OverlayListItem();
-            listItem.setLabel("CPU" + cpu.getId());
-            listItemByCpu.put(cpu, listItem);
-            monitorService.addListItem(listItem);
+            MonitorItem item = new MonitorItem();
+            item.setName("CPU" + cpu.getId());
+            monitorItemByCpu.put(cpu, item);
+            controller.addItem(item);
         }
     }
 
@@ -104,23 +118,22 @@ public class CPUFreqMonitor implements Runnable, Monitor {
 
     @Override
     public void run() {
-        while (monitorService.isMonitoringRunning()) {
-            monitorService.awaitNotPaused();
+        while (controller.isRunning()) {
+            controller.awaitNotPaused();
             Log.v(TAG, "CPUFreqMonitor update");
 
             updateCpus();
 
             for (CPU cpu : cpus) {
-                OverlayListItem listItem = listItemByCpu.get(cpu);
-                assert listItem != null;
-                listItem.setValue(buildCpuValueString(cpu));
-                monitorService.updateListItem(listItem);
+                MonitorItem item = Objects.requireNonNull(monitorItemByCpu.get(cpu));
+                item.setValue(buildCpuValueString(cpu));
+                controller.updateItem(item);
             }
 
             try {
-                Thread.sleep(500);
+                Thread.sleep(preferences.interval);
             } catch (InterruptedException e) {
-                if (monitorService.isMonitoringRunning()) {
+                if (controller.isRunning()) {
                     // No interrupt should happen except when monitor service quits
                     Log.e(TAG, "Unexcpected Interrupt received", e);
                     return;
@@ -142,7 +155,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
 
     private String buildCpuValueString(CPU cpu) {
         if (cpu.getLastState() == CPU.STATE_OFFLINE) {
-            return monitorService.getString(R.string.offline);
+            return context.getString(R.string.offline);
         } else {
             return String.format(Locale.getDefault(), "%06.1f MHz",
                     (double) cpu.getLastFrequency() / 1000);
@@ -171,5 +184,23 @@ public class CPUFreqMonitor implements Runnable, Monitor {
             String lcName = name.toLowerCase();
             return lcName.matches("(cpu)[0-9]+");
         });
+    }
+
+    private static class Preferences {
+        private final int interval;
+
+        private Preferences(SharedPreferences preferences) throws MonitorException {
+            this.interval = Integer.parseInt(Objects.requireNonNull(preferences.getString(
+                    PreferenceConstants.KEY_CPU_FREQ_MONITOR_REFRESH_INTERVAL,
+                    PreferenceConstants.DEF_CPU_FREQ_MONITOR_REFRESH_INTERVAL)));
+
+            validate();
+        }
+
+        private void validate() throws MonitorException {
+            if (interval < 500) {
+                throw new MonitorException(R.string.interval_must_be_at_least_500ms);
+            }
+        }
     }
 }

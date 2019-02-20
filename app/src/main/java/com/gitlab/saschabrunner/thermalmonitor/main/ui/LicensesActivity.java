@@ -1,7 +1,9 @@
-package com.gitlab.saschabrunner.thermalmonitor;
+package com.gitlab.saschabrunner.thermalmonitor.main.ui;
 
 import android.os.Bundle;
 import android.widget.TextView;
+
+import com.gitlab.saschabrunner.thermalmonitor.R;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +11,7 @@ import java.io.InputStreamReader;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public class Licenses extends AppCompatActivity {
+public class LicensesActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
