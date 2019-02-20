@@ -1,13 +1,14 @@
 package com.gitlab.saschabrunner.thermalmonitor.cpufreq;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.Monitor;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorController;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
-import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorService;
-import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListItem;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorItem;
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
 import java.io.File;
@@ -38,12 +39,14 @@ public class CPUFreqMonitor implements Runnable, Monitor {
     public static final int FAILURE_REASON_DIR_EMPTY = 2;
     public static final int FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION = 3;
 
+    private Context context;
     private Preferences preferences;
-    private MonitorService monitorService;
+    private MonitorController controller;
     private List<CPU> cpus;
-    private Map<CPU, OverlayListItem> listItemByCpu;
+    private Map<CPU, MonitorItem> monitorItemByCpu;
 
-    public CPUFreqMonitor() {
+    public CPUFreqMonitor(Context context) {
+        this.context = context;
     }
 
     @Override
@@ -84,21 +87,21 @@ public class CPUFreqMonitor implements Runnable, Monitor {
     }
 
     @Override
-    public void init(MonitorService monitorService, SharedPreferences monitorPreferences)
+    public void init(MonitorController controller, SharedPreferences monitorPreferences)
             throws MonitorException {
         if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
             throw new MonitorException(R.string.monitor_not_supported_with_supplied_preferences);
         }
 
         this.preferences = new Preferences(monitorPreferences);
-        this.monitorService = monitorService;
+        this.controller = controller;
         this.cpus = getCpus();
-        this.listItemByCpu = new HashMap<>();
+        this.monitorItemByCpu = new HashMap<>();
         for (CPU cpu : cpus) {
-            OverlayListItem listItem = new OverlayListItem();
-            listItem.setLabel("CPU" + cpu.getId());
-            listItemByCpu.put(cpu, listItem);
-            monitorService.addListItem(listItem);
+            MonitorItem item = new MonitorItem();
+            item.setName("CPU" + cpu.getId());
+            monitorItemByCpu.put(cpu, item);
+            controller.addItem(item);
         }
     }
 
@@ -115,23 +118,22 @@ public class CPUFreqMonitor implements Runnable, Monitor {
 
     @Override
     public void run() {
-        while (monitorService.isMonitoringRunning()) {
-            monitorService.awaitNotPaused();
+        while (controller.isRunning()) {
+            controller.awaitNotPaused();
             Log.v(TAG, "CPUFreqMonitor update");
 
             updateCpus();
 
             for (CPU cpu : cpus) {
-                OverlayListItem listItem = listItemByCpu.get(cpu);
-                assert listItem != null;
-                listItem.setValue(buildCpuValueString(cpu));
-                monitorService.updateListItem(listItem);
+                MonitorItem item = Objects.requireNonNull(monitorItemByCpu.get(cpu));
+                item.setValue(buildCpuValueString(cpu));
+                controller.updateItem(item);
             }
 
             try {
                 Thread.sleep(preferences.interval);
             } catch (InterruptedException e) {
-                if (monitorService.isMonitoringRunning()) {
+                if (controller.isRunning()) {
                     // No interrupt should happen except when monitor service quits
                     Log.e(TAG, "Unexcpected Interrupt received", e);
                     return;
@@ -153,7 +155,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
 
     private String buildCpuValueString(CPU cpu) {
         if (cpu.getLastState() == CPU.STATE_OFFLINE) {
-            return monitorService.getString(R.string.offline);
+            return context.getString(R.string.offline);
         } else {
             return String.format(Locale.getDefault(), "%06.1f MHz",
                     (double) cpu.getLastFrequency() / 1000);

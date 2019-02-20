@@ -6,9 +6,9 @@ import android.util.Log;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.Monitor;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorController;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
-import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorService;
-import com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay.OverlayListItem;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorItem;
 import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
@@ -56,9 +56,9 @@ public class ThermalMonitor implements Runnable, Monitor {
     private final IIPC rootIpc;
 
     private Preferences preferences;
-    private MonitorService monitorService;
+    private MonitorController controller;
     private List<ThermalZoneBase> thermalZones;
-    private Map<ThermalZoneBase, OverlayListItem> listItemByThermalZone;
+    private Map<ThermalZoneBase, MonitorItem> monitorItemByThermalZone;
 
     public ThermalMonitor() {
         this(null);
@@ -164,14 +164,14 @@ public class ThermalMonitor implements Runnable, Monitor {
     }
 
     @Override
-    public void init(MonitorService monitorService, SharedPreferences monitorPreferences)
+    public void init(MonitorController controller, SharedPreferences monitorPreferences)
             throws MonitorException {
         if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
             throw new MonitorException(R.string.monitor_not_supported_with_supplied_preferences);
         }
 
         this.preferences = new Preferences(monitorPreferences);
-        this.monitorService = monitorService;
+        this.controller = controller;
         if (preferences.useRoot) {
             try {
                 this.thermalZones = getThermalZonesRoot(getFilteredThermalZoneDirsRoot());
@@ -183,12 +183,12 @@ public class ThermalMonitor implements Runnable, Monitor {
         } else {
             this.thermalZones = getThermalZones(getFilteredThermalZoneDirs());
         }
-        this.listItemByThermalZone = new HashMap<>();
+        this.monitorItemByThermalZone = new HashMap<>();
         for (ThermalZoneBase thermalZone : thermalZones) {
-            OverlayListItem listItem = new OverlayListItem();
-            listItem.setLabel(thermalZone.getInfo().getType());
-            listItemByThermalZone.put(thermalZone, listItem);
-            monitorService.addListItem(listItem);
+            MonitorItem item = new MonitorItem();
+            item.setName(thermalZone.getInfo().getType());
+            monitorItemByThermalZone.put(thermalZone, item);
+            controller.addItem(item);
         }
     }
 
@@ -200,23 +200,23 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     @Override
     public void run() {
-        while (monitorService.isMonitoringRunning()) {
-            monitorService.awaitNotPaused();
+        while (controller.isRunning()) {
+            controller.awaitNotPaused();
             Log.v(TAG, "ThermalMonitor update");
 
             updateThermalZones();
 
             for (ThermalZoneBase thermalZone : thermalZones) {
-                OverlayListItem listItem = listItemByThermalZone.get(thermalZone);
-                assert listItem != null;
-                listItem.setValue(String.valueOf(thermalZone.getLastTemperature()));
-                monitorService.updateListItem(listItem);
+                MonitorItem item = Objects.requireNonNull(
+                        monitorItemByThermalZone.get(thermalZone));
+                item.setValue(String.valueOf(thermalZone.getLastTemperature()));
+                controller.updateItem(item);
             }
 
             try {
                 Thread.sleep(preferences.interval);
             } catch (InterruptedException e) {
-                if (monitorService.isMonitoringRunning()) {
+                if (controller.isRunning()) {
                     // No interrupt should happen except when monitor service quits
                     Log.e(TAG, "Unexcpected Interrupt received", e);
                     return;

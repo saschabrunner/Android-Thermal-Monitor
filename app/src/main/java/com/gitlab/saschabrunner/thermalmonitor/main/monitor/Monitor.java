@@ -12,10 +12,11 @@ public interface Monitor {
 
     /**
      *
-     * @param monitorService
+     * @param controller
      * @param monitorPreferences
      */
-    void init(MonitorService monitorService, SharedPreferences monitorPreferences) throws MonitorException;
+    void init(MonitorController controller, SharedPreferences monitorPreferences)
+            throws MonitorException;
 
     /**
      *

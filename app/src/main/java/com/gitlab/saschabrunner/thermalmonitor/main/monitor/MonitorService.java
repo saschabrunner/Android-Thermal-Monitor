@@ -31,7 +31,10 @@ import com.gitlab.saschabrunner.thermalmonitor.util.Constants;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -41,7 +44,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class MonitorService extends Service {
+public class MonitorService extends Service implements MonitorController {
     private static final String TAG = "MonitorService";
 
     private final Lock mutex = new ReentrantLock();
@@ -56,6 +59,7 @@ public class MonitorService extends Service {
     private View overlayView;
     private NotificationCompat.Builder notificationBuilder;
     private OverlayListAdapter listAdapter;
+    private Map<MonitorItem, OverlayListItem> overlayListItemByMonitorItem = new HashMap<>();
 
     @Override
     public void onCreate() {
@@ -195,7 +199,7 @@ public class MonitorService extends Service {
     }
 
     private void initCpuFreqMonitoring() throws MonitorException {
-        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
+        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
         if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
                 == CPUFreqMonitor.FAILURE_REASON_OK) {
             cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
@@ -280,23 +284,32 @@ public class MonitorService extends Service {
         }
     }
 
-    public void addListItem(OverlayListItem listItem) {
+    @Override
+    public void addItem(MonitorItem item) {
+        OverlayListItem listItem = new OverlayListItem();
+        monitorItemToOverlayListItem(item, listItem);
         listAdapter.addListItem(listItem);
+        overlayListItemByMonitorItem.put(item, listItem);
     }
 
-    public void updateListItem(OverlayListItem listItem) {
+    @Override
+    public void updateItem(MonitorItem item) {
+        OverlayListItem listItem = Objects.requireNonNull(overlayListItemByMonitorItem.get(item));
+        monitorItemToOverlayListItem(item, listItem);
         listAdapter.updateListItem(listItem);
     }
 
-    /**
-     * Called by specific monitor thread to check if it should pause.
-     *
-     * @return true, when the monitoring service is paused.
-     */
-    public boolean isMonitoringPaused() {
+    private void monitorItemToOverlayListItem(
+            MonitorItem monitorItem, OverlayListItem overlayListItem) {
+        overlayListItem.setLabel(monitorItem.getName());
+        overlayListItem.setValue(monitorItem.getValue());
+    }
+
+    @Override
+    public boolean isRunning() {
         mutex.lock();
         try {
-            return monitoringPaused;
+            return monitoringRunning;
         } finally {
             mutex.unlock();
         }
@@ -305,23 +318,15 @@ public class MonitorService extends Service {
     /**
      * If the monitoring service is paused, this method will block until the service is continued.
      */
+    @Override
     public void awaitNotPaused() {
         mutex.lock();
         try {
-            if (isMonitoringPaused()) {
+            if (monitoringPaused) {
                 notPaused.await();
             }
         } catch (InterruptedException e) {
             // Nothing to do
-        } finally {
-            mutex.unlock();
-        }
-    }
-
-    public boolean isMonitoringRunning() {
-        mutex.lock();
-        try {
-            return monitoringRunning;
         } finally {
             mutex.unlock();
         }

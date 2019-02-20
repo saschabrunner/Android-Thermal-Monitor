@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean checkCpuFreqMonitoringAvailable() throws MonitorException {
         boolean success = true;
 
-        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor();
+        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
         int cpuFreqMonitoringAvailable =
                 cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this));
         switch (cpuFreqMonitoringAvailable) {
