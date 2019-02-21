@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
@@ -18,18 +19,108 @@ import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
 import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import androidx.annotation.RequiresApi;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
+    private static final String FRAGMENT_HOME = "home";
+    private static final String FRAGMENT_SETTINGS = "settings";
+    private static final String FRAGMENT_ABOUT = "about";
+
+    private final Map<String, Fragment> fragmentMap = new HashMap<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        BottomNavigationView navigation = findViewById(R.id.mainBottomNavigation);
+        navigation.setOnNavigationItemSelectedListener(this::onNavigationItemSelected);
+        switchToHomeFragment();
+    }
+
+    private boolean onNavigationItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.bottomNavigationHome:
+                switchToHomeFragment();
+                return true;
+            case R.id.bottomNavigationSettings:
+                switchToSettingsFragment();
+                return true;
+            case R.id.bottomNavigationAbout:
+                switchToAboutFragment();
+                return true;
+        }
+        return false;
+    }
+
+    private void switchToHomeFragment() {
+        if (fragmentMap.get(FRAGMENT_HOME) == null) {
+            fragmentMap.put(FRAGMENT_HOME, new HomeFragment());
+        }
+
+        showFragment(fragmentMap.get(FRAGMENT_HOME), R.string.home);
+    }
+
+    private void switchToSettingsFragment() {
+        if (fragmentMap.get(FRAGMENT_SETTINGS) == null) {
+            fragmentMap.put(FRAGMENT_SETTINGS, new SettingsFragment());
+        }
+
+        showFragment(fragmentMap.get(FRAGMENT_SETTINGS), R.string.settings);
+    }
+
+    private void switchToAboutFragment() {
+        if (fragmentMap.get(FRAGMENT_ABOUT) == null) {
+            fragmentMap.put(FRAGMENT_ABOUT, new AboutFragment());
+        }
+
+        showFragment(fragmentMap.get(FRAGMENT_ABOUT), R.string.about);
+    }
+
+    private void showFragment(Fragment fragment, @StringRes int title) {
+        // Set the action bar title
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setTitle(title);
+        }
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        List<Fragment> fragments = fragmentManager.getFragments();
+
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        // Hide all fragments except the one to show
+        boolean fragmentFound = false;
+        for (Fragment curFragment : fragments) {
+            if (curFragment == fragment) {
+                fragmentTransaction.show(curFragment);
+                fragmentFound = true;
+            } else {
+                fragmentTransaction.hide(curFragment);
+            }
+        }
+
+        if (!fragmentFound) {
+            // The fragment is new and needs to be added instead
+            fragmentTransaction.add(R.id.mainContent, fragment);
+        }
+
+        fragmentTransaction.commit();
     }
 
     private void checkMonitoringAvailable() {
@@ -196,6 +287,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startService(View view) {
+        checkMonitoringAvailable();
         startService();
     }
 
@@ -205,16 +297,5 @@ public class MainActivity extends AppCompatActivity {
 
     public void showLicenses(View view) {
         startActivity(new Intent(this, LicensesActivity.class));
-    }
-
-    public void showPreferences(View view) {
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.temporaryPreferencesView, new PreferencesFragment())
-                .commit();
-    }
-
-    public void checkCompatibility(View view) {
-        checkMonitoringAvailable();
     }
 }

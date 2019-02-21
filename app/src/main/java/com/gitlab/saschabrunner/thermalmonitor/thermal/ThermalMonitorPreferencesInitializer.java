@@ -5,8 +5,8 @@ import android.util.Log;
 
 import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
-import com.gitlab.saschabrunner.thermalmonitor.main.ui.PreferencesFragment;
 import com.gitlab.saschabrunner.thermalmonitor.main.ui.PreferencesInitializer;
+import com.gitlab.saschabrunner.thermalmonitor.main.ui.SettingsFragment;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
@@ -20,7 +20,7 @@ public class ThermalMonitorPreferencesInitializer implements PreferencesInitiali
     private static final String TAG = "ThermalMonitorPrefInit";
 
     @Override
-    public void init(PreferencesFragment fragment, SharedPreferences preferences) {
+    public void init(SettingsFragment fragment, SharedPreferences preferences) {
         // Load available thermal zones on click with current settings
         /* TODO: It's the easiest way to load the thermal zones respecting the current user
          * settings, but it's slow and should be replaced */

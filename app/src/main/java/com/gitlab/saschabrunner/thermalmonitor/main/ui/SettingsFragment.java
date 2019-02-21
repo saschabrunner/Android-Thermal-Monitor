@@ -9,14 +9,14 @@ import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 import androidx.preference.PreferenceFragmentCompat;
 
 
-public class PreferencesFragment extends PreferenceFragmentCompat {
-    public PreferencesFragment() {
+public class SettingsFragment extends PreferenceFragmentCompat {
+    public SettingsFragment() {
         // Required empty public constructor
     }
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        setPreferencesFromResource(R.xml.fragment_preferences, rootKey);
+        setPreferencesFromResource(R.xml.fragment_settings, rootKey);
 
         new ThermalMonitorPreferencesInitializer()
                 .init(this, Utils.getGlobalPreferences(getContext()));
