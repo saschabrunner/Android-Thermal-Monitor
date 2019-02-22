@@ -1,7 +1,5 @@
 package com.gitlab.saschabrunner.thermalmonitor.main.ui;
 
-import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -11,7 +9,6 @@ import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.cpufreq.CPUFreqMonitor;
 import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
-import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorService;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
 import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
@@ -131,7 +128,8 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.commit();
     }
 
-    private void checkMonitoringAvailable() {
+    // TODO: Refactor and move somewhere central
+    public void checkMonitoringAvailable() {
         boolean success = true;
 
         try {
@@ -265,25 +263,8 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
-    private void startService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(new Intent(this, MonitorService.class));
-        } else {
-            startService(new Intent(this, MonitorService.class));
-        }
-    }
-
-    private void stopService() {
-        stopService(new Intent(this, MonitorService.class));
-    }
-
-    public void startService(View view) {
-        checkMonitoringAvailable();
-        startService();
-    }
-
-    public void stopService(View view) {
-        stopService();
+    public void toggleService(View view) {
+        getHomeFragment().toggleService(view);
     }
 
     public void showLicenses(View view) {

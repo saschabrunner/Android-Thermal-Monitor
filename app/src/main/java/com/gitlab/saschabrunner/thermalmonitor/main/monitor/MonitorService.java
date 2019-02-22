@@ -47,6 +47,8 @@ import androidx.recyclerview.widget.RecyclerView;
 public class MonitorService extends Service implements MonitorController {
     private static final String TAG = "MonitorService";
 
+    private static boolean serviceRunning = false;
+
     private final Lock mutex = new ReentrantLock();
     private final Condition notPaused = mutex.newCondition();
     private boolean monitoringPaused = true;
@@ -83,6 +85,7 @@ public class MonitorService extends Service implements MonitorController {
         initBroadcastReceiver();
         initOverlay();
         initMonitoring();
+        serviceRunning = true;
     }
 
     private void initNotification() {
@@ -224,6 +227,7 @@ public class MonitorService extends Service implements MonitorController {
     @Override
     public void onDestroy() {
         Log.v(TAG, "onDestroy");
+        serviceRunning = false;
         deinitMonitoring();
         deinitOverlay();
         deinitBroadcastReceiver();
@@ -330,6 +334,10 @@ public class MonitorService extends Service implements MonitorController {
         } finally {
             mutex.unlock();
         }
+    }
+
+    public static boolean isServiceRunning() {
+        return serviceRunning;
     }
 
     private class PowerEventReceiver extends BroadcastReceiver {
