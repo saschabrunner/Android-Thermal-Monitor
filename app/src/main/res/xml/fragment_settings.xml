@@ -5,6 +5,9 @@
         <CheckBoxPreference
             app:key="rootEnabled"
             app:title="Enable root functions" />
+        <Preference
+            app:key="dummyOverlaySettings"
+            app:title="Open android overlay permission settings" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Overlay">

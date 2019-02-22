@@ -7,18 +7,7 @@
     tools:context=".main.ui.MainActivity">
 
     <Button
-        android:id="@+id/mainButtonOpenOverlaySettings"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:onClick="openOverlayPermissionSettings"
-        android:text="@string/overlay_settings"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/mainButtonStartService"
+        android:id="@+id/homeButtonStartService"
         android:layout_width="wrap_content"
         android:layout_height="48dp"
         android:layout_marginStart="8dp"
@@ -26,26 +15,16 @@
         android:onClick="startService"
         android:text="@string/start_service"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/mainButtonOpenOverlaySettings" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/mainButtonStopService"
+        android:id="@+id/homeButtonStopService"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:onClick="stopService"
         android:text="@string/stop_service"
-        app:layout_constraintStart_toEndOf="@+id/mainButtonStartService"
-        app:layout_constraintTop_toTopOf="@+id/mainButtonStartService" />
-
-    <Button
-        android:id="@+id/button4"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:onClick="showLicenses"
-        android:text="@string/licenses"
-        app:layout_constraintStart_toEndOf="@+id/mainButtonOpenOverlaySettings"
-        app:layout_constraintTop_toTopOf="@+id/mainButtonOpenOverlaySettings" />
+        app:layout_constraintStart_toEndOf="@+id/homeButtonStartService"
+        app:layout_constraintTop_toTopOf="@+id/homeButtonStartService" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

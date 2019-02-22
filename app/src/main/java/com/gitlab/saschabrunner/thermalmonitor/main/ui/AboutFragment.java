@@ -1,6 +1,7 @@
 package com.gitlab.saschabrunner.thermalmonitor.main.ui;
 
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,5 +22,9 @@ public class AboutFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_about, container, false);
+    }
+
+    public void showLicenses(View view) {
+        startActivity(new Intent(getContext(), LicensesActivity.class));
     }
 }

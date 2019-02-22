@@ -1,14 +1,11 @@
 package com.gitlab.saschabrunner.thermalmonitor.main.ui;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.cpufreq.CPUFreqMonitor;
@@ -25,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import androidx.annotation.RequiresApi;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
@@ -68,28 +64,40 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void switchToHomeFragment() {
+    private HomeFragment getHomeFragment() {
         if (fragmentMap.get(FRAGMENT_HOME) == null) {
             fragmentMap.put(FRAGMENT_HOME, new HomeFragment());
         }
 
-        showFragment(fragmentMap.get(FRAGMENT_HOME), R.string.home);
+        return (HomeFragment) fragmentMap.get(FRAGMENT_HOME);
     }
 
-    private void switchToSettingsFragment() {
+    private void switchToHomeFragment() {
+        showFragment(getHomeFragment(), R.string.home);
+    }
+
+    private SettingsFragment getSettingsFragment() {
         if (fragmentMap.get(FRAGMENT_SETTINGS) == null) {
             fragmentMap.put(FRAGMENT_SETTINGS, new SettingsFragment());
         }
 
-        showFragment(fragmentMap.get(FRAGMENT_SETTINGS), R.string.settings);
+        return (SettingsFragment) fragmentMap.get(FRAGMENT_SETTINGS);
     }
 
-    private void switchToAboutFragment() {
+    private void switchToSettingsFragment() {
+        showFragment(getSettingsFragment(), R.string.settings);
+    }
+
+    private AboutFragment getAboutFragment() {
         if (fragmentMap.get(FRAGMENT_ABOUT) == null) {
             fragmentMap.put(FRAGMENT_ABOUT, new AboutFragment());
         }
 
-        showFragment(fragmentMap.get(FRAGMENT_ABOUT), R.string.about);
+        return (AboutFragment) fragmentMap.get(FRAGMENT_ABOUT);
+    }
+
+    private void switchToAboutFragment() {
+        showFragment(getAboutFragment(), R.string.about);
     }
 
     private void showFragment(Fragment fragment, @StringRes int title) {
@@ -257,13 +265,6 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    private void openOverlayPermissionSettings() {
-        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:" + getPackageName()));
-        startActivity(intent);
-    }
-
     private void startService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(new Intent(this, MonitorService.class));
@@ -276,16 +277,6 @@ public class MainActivity extends AppCompatActivity {
         stopService(new Intent(this, MonitorService.class));
     }
 
-    public void openOverlayPermissionSettings(View view) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            openOverlayPermissionSettings();
-        } else {
-            Toast.makeText(this, "Only available on Android 6.0 and up",
-                    Toast.LENGTH_LONG)
-                    .show();
-        }
-    }
-
     public void startService(View view) {
         checkMonitoringAvailable();
         startService();
@@ -296,6 +287,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showLicenses(View view) {
-        startActivity(new Intent(this, LicensesActivity.class));
+        getAboutFragment().showLicenses(view);
     }
 }
