@@ -24,6 +24,9 @@ import androidx.fragment.app.Fragment;
 public class HomeFragment extends Fragment {
     private boolean serviceStarting = false;
 
+    private Handler uiUpdateHandler;
+    private PeriodicUIUpdater periodicUIUpdater;
+
     private TextView tvRunningStatus;
     private Button btnToggleService;
 
@@ -46,8 +49,15 @@ public class HomeFragment extends Fragment {
         tvRunningStatus = view.findViewById(R.id.homeRunningStatus);
         btnToggleService = view.findViewById(R.id.homeButtonToggleService);
 
-        Handler handler = new Handler();
-        handler.post(new PeriodicUIUpdater(handler, 1000));
+        uiUpdateHandler = new Handler();
+        periodicUIUpdater = new PeriodicUIUpdater(uiUpdateHandler, 1000);
+        uiUpdateHandler.post(periodicUIUpdater);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        uiUpdateHandler.removeCallbacks(periodicUIUpdater);
     }
 
     private void startService() {
