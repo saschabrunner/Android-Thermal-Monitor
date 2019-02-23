@@ -165,7 +165,7 @@ public class MonitorService extends Service implements MonitorController {
                 initCpuFreqMonitoring();
             }
         } catch (MonitorException e) {
-            Log.e(TAG, e.getMessage(this), e);
+            Log.e(TAG, "Monitor could not be initialized", e);
             stopWithMessage("Monitor exited with exception (check compatibility)");
         }
 

@@ -12,6 +12,7 @@ import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
 import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
+import com.gitlab.saschabrunner.thermalmonitor.util.MessageUtils;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -21,7 +22,6 @@ import java.util.Map;
 
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -131,9 +131,9 @@ public class MainActivity extends AppCompatActivity
         fragmentTransaction.show(fragment);
         fragmentTransaction.commit();
     }
-    
+
     // TODO: Refactor and move somewhere central
-    public void checkMonitoringAvailable() {
+    public boolean checkMonitoringAvailable() {
         boolean success = true;
 
         try {
@@ -145,15 +145,12 @@ public class MainActivity extends AppCompatActivity
                 success &= checkCpuFreqMonitoringAvailable();
             }
         } catch (MonitorException e) {
-            showInfoDialog("Monitor configuration invalid", e.getMessage(this));
+            MessageUtils.showInfoDialog(this, R.string.monitorConfigurationInvalid,
+                    e.getResourceId());
             success = false;
         }
 
-        if (success) {
-            showInfoDialog("Checks succeeded",
-                    "All enabled modules should be working with the current " +
-                            "configuration.");
-        }
+        return success;
     }
 
     private boolean checkThermalMonitoringAvailable() throws MonitorException {
@@ -166,7 +163,8 @@ public class MainActivity extends AppCompatActivity
                 thermalMonitor = new ThermalMonitor(RootIPCSingleton.getInstance(this));
             } catch (RootAccessException e) {
                 Log.e(TAG, "Root access has been denied", e);
-                showInfoDialog("Root access denied", "Could not acquire root access");
+                MessageUtils.showInfoDialog(this, R.string.rootAccessDenied,
+                        R.string.couldNotAcquireRootAccess);
                 return false;
             }
         } else {
@@ -180,49 +178,48 @@ public class MainActivity extends AppCompatActivity
             case ThermalMonitor.FAILURE_REASON_OK:
                 break;
             case ThermalMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
-                showInfoDialog("Thermal Monitoring disabled",
-                        "/sys/class/thermal does not exist");
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.sysClassThermalDoesNotExist);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_NO_ENABLED_THERMAL_ZONES:
-                showInfoDialog("Thermal Monitoring disabled",
-                        "No valid thermal zones are enabled");
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.noValidThermalZonesAreEnabled);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_THERMAL_ZONES_NOT_READABLE:
-                showInfoDialog("Thermal Monitoring disabled",
-                        "Couldn't read thermal zones");
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.couldNotReadThermalZones);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_TYPE_NO_PERMISSION:
-                showInfoDialog("Thermal Monitoring disabled",
-                        "Can't read type of a thermal zone");
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.canNotReadTypeOfAThermalZone);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_TEMP_NO_PERMISSION:
-                showInfoDialog("Thermal Monitoring disabled",
-                        "Can't read temp of a thermal zone");
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.canNotReadTemperatureOfAThermalZone);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_NO_ROOT_IPC:
-                showInfoDialog("Thermal Monitoring disabled",
-                        "No root IPC object passed to monitor " +
-                                "(root globally disabled?)");
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.noRootIpcObjectPassedToMonitor);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_TEMP_NOT_READABLE:
-                showInfoDialog("Thermal Monitoring disabled",
-                        "Can't read temp of a thermal zone");
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.canNotReadTemperatureOfAThermalZone);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_TYPE_NOT_READABLE:
-                showInfoDialog("Thermal Monitoring disabled",
-                        "Can't read type of a thermal zone");
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.canNotReadTypeOfAThermalZone);
                 success = false;
                 break;
             default:
-                showInfoDialog("Thermal Monitoring disabled",
-                        "Unknown error");
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.unknownError);
                 success = false;
                 break;
         }
@@ -240,31 +237,23 @@ public class MainActivity extends AppCompatActivity
             case CPUFreqMonitor.FAILURE_REASON_OK:
                 break;
             case CPUFreqMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
-                showInfoDialog("CPU frequency monitoring disabled",
-                        "/sys/devices/system/cpu does not exist");
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                        R.string.sysDevicesSystemCpuDoesNotExist);
                 success = false;
                 break;
             case CPUFreqMonitor.FAILURE_REASON_DIR_EMPTY:
-                showInfoDialog("CPU frequency monitoring disabled",
-                        "Can't find any CPUs in /sys/devices/system/cpu");
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                        R.string.canNotFindAnyCpusInSysDevicesSystemCpu);
                 success = false;
                 break;
             case CPUFreqMonitor.FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION:
-                showInfoDialog("CPU frequency monitoring disabled",
-                        "Can't read frequency of a CPU");
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                        R.string.canNotReadFrequencyOfACpu);
                 success = false;
                 break;
         }
 
         return success;
-    }
-
-    private void showInfoDialog(String title, String message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(title)
-                .setMessage(message)
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.cancel());
-        builder.show();
     }
 
     public void toggleService(View view) {

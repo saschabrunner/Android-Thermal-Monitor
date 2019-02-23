@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,7 @@ import android.widget.TextView;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorService;
+import com.gitlab.saschabrunner.thermalmonitor.util.MessageUtils;
 
 import java.util.Objects;
 
@@ -22,6 +24,8 @@ import androidx.fragment.app.Fragment;
 
 
 public class HomeFragment extends Fragment {
+    private static final String TAG = "HomeFragment";
+
     private boolean serviceStarting = false;
 
     private Handler uiUpdateHandler;
@@ -50,7 +54,7 @@ public class HomeFragment extends Fragment {
         btnToggleService = view.findViewById(R.id.homeButtonToggleService);
 
         uiUpdateHandler = new Handler();
-        periodicUIUpdater = new PeriodicUIUpdater(uiUpdateHandler, 1000);
+        periodicUIUpdater = new PeriodicUIUpdater(uiUpdateHandler, 1000, 10);
         uiUpdateHandler.post(periodicUIUpdater);
     }
 
@@ -60,14 +64,21 @@ public class HomeFragment extends Fragment {
         uiUpdateHandler.removeCallbacks(periodicUIUpdater);
     }
 
-    private void startService() {
-        ((MainActivity) getActivity()).checkMonitoringAvailable();
+    private boolean startService() {
+        // Check compatibility
+        if (!((MainActivity) getActivity()).checkMonitoringAvailable()) {
+            return false;
+        }
+
+        // Start service
         Activity activity = Objects.requireNonNull(getActivity());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             activity.startForegroundService(new Intent(getContext(), MonitorService.class));
         } else {
             activity.startService(new Intent(getContext(), MonitorService.class));
         }
+
+        return true;
     }
 
     private void stopService() {
@@ -79,9 +90,12 @@ public class HomeFragment extends Fragment {
         if (MonitorService.isServiceRunning()) {
             stopService();
         } else {
-            startService();
             serviceStarting = true;
             updateUiServiceStarting();
+            if (!startService()) {
+                serviceStarting = false;
+                updateUiServiceError();
+            }
         }
     }
 
@@ -106,24 +120,66 @@ public class HomeFragment extends Fragment {
         btnToggleService.setEnabled(true);
     }
 
+    private void updateUiServiceError() {
+        tvRunningStatus.setText(R.string.error);
+        tvRunningStatus.setTextColor(getResources().getColor(R.color.error));
+        btnToggleService.setText(R.string.start);
+        btnToggleService.setEnabled(true);
+    }
+
     private class PeriodicUIUpdater implements Runnable {
         private Handler handler;
         private int interval;
+        private int waitingTicks;
+        private int currentWaitingTicks = 0;
+        private boolean inErrorState = false;
 
-        private PeriodicUIUpdater(Handler handler, int interval) {
+        /**
+         * @param handler      Handler to schedule continued execution on.
+         * @param interval     Interval between scheduled executions.
+         * @param waitingTicks How many executions to wait for the service to start before
+         *                     switching to error state.
+         */
+        private PeriodicUIUpdater(Handler handler, int interval, int waitingTicks) {
             this.handler = handler;
             this.interval = interval;
+            this.waitingTicks = waitingTicks;
         }
 
+        /**
+         * If service is running: updateUiServiceRunning()
+         * If service is starting: Wait maximum waitingTicks while updateUiServiceStarting(),
+         * before showing timeout error updateUiServiceError()
+         * If service is stopped: updateUiServiceStopped()
+         * <p>
+         * This code is shoddily written and a rewrite should be considered.
+         */
         @Override
         public void run() {
             if (MonitorService.isServiceRunning()) {
+                currentWaitingTicks = 0;
+                inErrorState = false;
                 serviceStarting = false;
                 updateUiServiceRunning();
             } else {
                 if (serviceStarting) {
-                    updateUiServiceStarting();
-                } else {
+                    inErrorState = false;
+                    if (currentWaitingTicks < waitingTicks) {
+                        currentWaitingTicks++;
+                        updateUiServiceStarting();
+                    } else {
+                        Log.e(TAG, "Timed out waiting for service to start (" +
+                                "interval: " + interval + ", " +
+                                "waitingTicks: " + waitingTicks + ")");
+                        currentWaitingTicks = 0;
+                        serviceStarting = false;
+                        inErrorState = true;
+                        MessageUtils.showInfoDialog(getContext(), R.string.timeout,
+                                R.string.timedOutWaitingForServiceToStart);
+                        updateUiServiceError();
+                    }
+                } else if (!inErrorState) {
+                    currentWaitingTicks = 0;
                     updateUiServiceStopped();
                 }
             }
