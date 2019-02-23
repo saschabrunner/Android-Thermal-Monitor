@@ -8,8 +8,6 @@ import android.provider.Settings;
 import android.widget.Toast;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
-import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitorPreferencesInitializer;
-import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
 import java.util.Objects;
 
@@ -28,9 +26,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
         Preference overlaySettings = findPreference("dummyOverlaySettings");
         overlaySettings.setOnPreferenceClickListener(preference -> openOverlayPermissionSettings());
-
-        new ThermalMonitorPreferencesInitializer()
-                .init(this, Utils.getGlobalPreferences(getContext()));
     }
 
     private boolean openOverlayPermissionSettings() {

@@ -26,8 +26,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+        implements PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
     private static final String TAG = "MainActivity";
     private static final String FRAGMENT_HOME = "home";
     private static final String FRAGMENT_SETTINGS = "settings";
@@ -113,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
         boolean fragmentFound = false;
         for (Fragment curFragment : fragments) {
             if (curFragment == fragment) {
-                fragmentTransaction.show(curFragment);
                 fragmentFound = true;
             } else {
                 fragmentTransaction.hide(curFragment);
@@ -121,13 +123,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!fragmentFound) {
-            // The fragment is new and needs to be added instead
+            // The fragment is new and needs to be added first
             fragmentTransaction.add(R.id.mainContent, fragment);
         }
 
+        // Make sure the fragment is visible
+        fragmentTransaction.show(fragment);
         fragmentTransaction.commit();
     }
-
+    
     // TODO: Refactor and move somewhere central
     public void checkMonitoringAvailable() {
         boolean success = true;
@@ -269,5 +273,25 @@ public class MainActivity extends AppCompatActivity {
 
     public void showLicenses(View view) {
         getAboutFragment().showLicenses(view);
+    }
+
+    @Override
+    public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
+        // Instantiate the new Fragment
+        final Bundle args = pref.getExtras();
+        final Fragment fragment = getSupportFragmentManager().getFragmentFactory().instantiate(
+                getClassLoader(),
+                pref.getFragment(),
+                args);
+        fragment.setArguments(args);
+        fragment.setTargetFragment(caller, 0);
+
+        // Replace the existing Fragment with the new Fragment
+        getSupportFragmentManager().beginTransaction()
+                .add(R.id.mainContent, fragment)
+                .hide(caller)
+                .addToBackStack(null)
+                .commit();
+        return true;
     }
 }
