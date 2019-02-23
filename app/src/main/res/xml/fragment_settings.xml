@@ -6,6 +6,7 @@
             app:key="rootEnabled"
             app:title="Enable root functions" />
         <Preference
+            app:isPreferenceVisible="false"
             app:key="dummyOverlaySettings"
             app:title="Open Android overlay permission settings" />
     </PreferenceCategory>

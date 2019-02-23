@@ -5,12 +5,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.widget.Toast;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 
 import java.util.Objects;
 
+import androidx.annotation.RequiresApi;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
@@ -25,19 +25,17 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setPreferencesFromResource(R.xml.fragment_settings, rootKey);
 
         Preference overlaySettings = findPreference("dummyOverlaySettings");
-        overlaySettings.setOnPreferenceClickListener(preference -> openOverlayPermissionSettings());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            overlaySettings.setVisible(true);
+            overlaySettings.setOnPreferenceClickListener(this::openOverlayPermissionSettings);
+        }
     }
 
-    private boolean openOverlayPermissionSettings() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + Objects.requireNonNull(getContext()).getPackageName()));
-            startActivity(intent);
-        } else {
-            Toast.makeText(getContext(), "Only available on Android 6.0 and up",
-                    Toast.LENGTH_LONG)
-                    .show();
-        }
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private boolean openOverlayPermissionSettings(Preference preference) {
+        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:" + Objects.requireNonNull(getContext()).getPackageName()));
+        startActivity(intent);
         return true;
     }
 }
