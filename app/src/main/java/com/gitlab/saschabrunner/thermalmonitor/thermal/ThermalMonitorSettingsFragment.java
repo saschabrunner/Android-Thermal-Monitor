@@ -14,6 +14,7 @@ import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 import java.util.List;
 
 import androidx.preference.MultiSelectListPreference;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
 
@@ -28,51 +29,61 @@ public class ThermalMonitorSettingsFragment extends PreferenceFragmentCompat {
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.fragment_settings_thermal_monitor, rootKey);
 
-        if (GlobalPreferences.getInstance().rootEnabled()) {
-            findPreference(PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT).setEnabled(true);
+        // Disable root preference if root access is disabled
+        if (!GlobalPreferences.getInstance().rootEnabled()) {
+            Preference useRoot = findPreference(PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT);
+            useRoot.setEnabled(false);
+            useRoot.setSummary(R.string.enableRootGloballyFirstToUseThisFeature);
         }
 
         // Load available thermal zones on click with current settings
-        /* TODO: It's the easiest way to load the thermal zones respecting the current user
-         * settings, but it's slow and should be replaced */
-        MultiSelectListPreference zones =
-                findPreference(PreferenceConstants.KEY_THERMAL_MONITOR_THERMAL_ZONES);
-        zones.setOnPreferenceClickListener(preference -> {
-            ThermalMonitor monitor;
-            if (GlobalPreferences.getInstance().rootEnabled()) {
-                try {
-                    monitor = new ThermalMonitor(
-                            RootIPCSingleton.getInstance(getContext()));
-                } catch (RootAccessException e) {
-                    Log.e(TAG, "Could not acquire root access", e);
-                    return false;
-                }
-            } else {
-                monitor = new ThermalMonitor();
-            }
+        Preference zones = findPreference(PreferenceConstants.KEY_THERMAL_MONITOR_THERMAL_ZONES);
+        zones.setOnPreferenceClickListener(this::populateThermalZoneList);
+    }
 
-            List<ThermalZoneInfo> thermalZoneInfos;
+    /**
+     * Load available thermal zones with current settings.
+     * TODO: It's the easiest way to load the thermal zones respecting the current user
+     * settings, but it's slow and should be replaced
+     *
+     * @param preference MultiSelectListPreference
+     * @return true
+     */
+    private boolean populateThermalZoneList(Preference preference) {
+        ThermalMonitor monitor;
+        if (GlobalPreferences.getInstance().rootEnabled()) {
             try {
-                thermalZoneInfos = monitor.getThermalZoneInfos(
-                        Utils.getGlobalPreferences(preference.getContext()));
-            } catch (MonitorException e) {
-                Log.e(TAG, "Couldn't get thermal zones", e);
+                monitor = new ThermalMonitor(
+                        RootIPCSingleton.getInstance(getContext()));
+            } catch (RootAccessException e) {
+                Log.e(TAG, "Could not acquire root access", e);
                 return false;
             }
+        } else {
+            monitor = new ThermalMonitor();
+        }
 
-            String[] entries = new String[thermalZoneInfos.size()];
-            String[] entrieValues = new String[thermalZoneInfos.size()];
+        List<ThermalZoneInfo> thermalZoneInfos;
+        try {
+            thermalZoneInfos = monitor.getThermalZoneInfos(
+                    Utils.getGlobalPreferences(preference.getContext()));
+        } catch (MonitorException e) {
+            Log.e(TAG, "Couldn't get thermal zones", e);
+            return false;
+        }
 
-            for (int i = 0; i < thermalZoneInfos.size(); i++) {
-                ThermalZoneInfo info = thermalZoneInfos.get(i);
-                entries[i] = info.getType();
-                entrieValues[i] = String.valueOf(info.getId());
-            }
+        String[] entries = new String[thermalZoneInfos.size()];
+        String[] entrieValues = new String[thermalZoneInfos.size()];
 
-            ((MultiSelectListPreference) preference).setEntries(entries);
-            ((MultiSelectListPreference) preference).setEntryValues(entrieValues);
+        for (int i = 0; i < thermalZoneInfos.size(); i++) {
+            ThermalZoneInfo info = thermalZoneInfos.get(i);
+            entries[i] = info.getType();
+            entrieValues[i] = String.valueOf(info.getId());
+        }
 
-            return true;
-        });
+        ((MultiSelectListPreference) preference).setEntries(entries);
+        ((MultiSelectListPreference) preference).setEntryValues(entrieValues);
+
+        return true;
     }
 }

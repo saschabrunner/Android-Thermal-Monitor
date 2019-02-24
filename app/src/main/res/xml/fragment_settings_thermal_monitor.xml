@@ -7,7 +7,6 @@
             app:title="Enable thermal monitoring" />
 
         <CheckBoxPreference
-            app:enabled="false"
             app:key="thermalMonitorUseRoot"
             app:title="Use root to access thermal zones" />
 

@@ -36,4 +36,5 @@
     <string name="sysDevicesSystemCpuDoesNotExist">/sys/devices/system/cpu does not exist.</string>
     <string name="canNotFindAnyCpusInSysDevicesSystemCpu">Can\'t find any CPUs in /sys/devices/system/cpu.</string>
     <string name="canNotReadFrequencyOfACpu">Can\'t read frequency of a CPU.</string>
+    <string name="enableRootGloballyFirstToUseThisFeature">Enable root globally first to use this feature</string>
 </resources>
