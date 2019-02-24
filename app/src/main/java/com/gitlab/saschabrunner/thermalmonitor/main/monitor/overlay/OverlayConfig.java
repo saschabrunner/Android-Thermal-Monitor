@@ -1,6 +1,9 @@
 package com.gitlab.saschabrunner.thermalmonitor.main.monitor.overlay;
 
 import android.content.SharedPreferences;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
+import android.view.View;
 
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
@@ -14,7 +17,7 @@ public class OverlayConfig {
     private final int labelVisibility;
     private final int labelWidth;
 
-    public OverlayConfig(SharedPreferences preferences) {
+    public OverlayConfig(SharedPreferences preferences, DisplayMetrics displayMetrics) {
         this.gravity = Integer.decode(Objects.requireNonNull(preferences.getString(
                 PreferenceConstants.KEY_OVERLAY_GRAVITY,
                 PreferenceConstants.DEF_OVERLAY_GRAVITY)));
@@ -29,17 +32,21 @@ public class OverlayConfig {
                 PreferenceConstants.KEY_OVERLAY_TEXT_COLOR,
                 PreferenceConstants.DEF_OVERLAY_TEXT_COLOR))).intValue();
 
-        this.textSize = Integer.parseInt(Objects.requireNonNull(preferences.getString(
-                PreferenceConstants.KEY_OVERLAY_TEXT_SIZE,
-                PreferenceConstants.DEF_OVERLAY_TEXT_SIZE)));
+        this.textSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                Float.parseFloat(Objects.requireNonNull(preferences.getString(
+                        PreferenceConstants.KEY_OVERLAY_TEXT_SIZE,
+                        PreferenceConstants.DEF_OVERLAY_TEXT_SIZE))),
+                displayMetrics);
 
-        this.labelVisibility = Integer.decode(Objects.requireNonNull(preferences.getString(
+        this.labelVisibility = preferences.getBoolean(
                 PreferenceConstants.KEY_OVERLAY_LABEL_VISIBILITY,
-                PreferenceConstants.DEF_OVERLAY_LABEL_VISIBILITY)));
+                PreferenceConstants.DEF_OVERLAY_LABEL_VISIBILITY) ? View.VISIBLE : View.GONE;
 
-        this.labelWidth = Integer.parseInt(Objects.requireNonNull(preferences.getString(
-                PreferenceConstants.KEY_OVERLAY_LABEL_WIDTH,
-                PreferenceConstants.DEF_OVERLAY_LABEL_WIDTH)));
+        this.labelWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                Float.parseFloat(Objects.requireNonNull(preferences.getString(
+                        PreferenceConstants.KEY_OVERLAY_LABEL_WIDTH,
+                        PreferenceConstants.DEF_OVERLAY_LABEL_WIDTH))),
+                displayMetrics);
     }
 
     public int getGravity() {

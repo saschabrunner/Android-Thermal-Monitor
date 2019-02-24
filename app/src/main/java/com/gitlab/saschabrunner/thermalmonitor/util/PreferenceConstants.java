@@ -2,7 +2,6 @@ package com.gitlab.saschabrunner.thermalmonitor.util;
 
 import android.graphics.Color;
 import android.view.Gravity;
-import android.view.View;
 
 import java.util.Collections;
 import java.util.Set;
@@ -35,6 +34,6 @@ public class PreferenceConstants {
     public static final String DEF_OVERLAY_BACKGROUND_COLOR = String.valueOf(0x80FFFFFF);
     public static final String DEF_OVERLAY_TEXT_COLOR = String.valueOf(Color.BLACK);
     public static final String DEF_OVERLAY_TEXT_SIZE = String.valueOf(24);
-    public static final String DEF_OVERLAY_LABEL_VISIBILITY = String.valueOf(View.VISIBLE);
+    public static final boolean DEF_OVERLAY_LABEL_VISIBILITY = true;
     public static final String DEF_OVERLAY_LABEL_WIDTH = String.valueOf(260);
 }

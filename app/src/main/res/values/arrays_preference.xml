@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="overlayPositionEntries">
+        <item>@string/topLeft</item>
+        <item>@string/topRight</item>
+        <item>@string/bottomLeft</item>
+        <item>@string/bottomRight</item>
+    </string-array>
+    <string-array name="overlayPositionValues">
+        <item>0x33</item>
+        <item>0x35</item>
+        <item>0x53</item>
+        <item>0x55</item>
+    </string-array>
+</resources>

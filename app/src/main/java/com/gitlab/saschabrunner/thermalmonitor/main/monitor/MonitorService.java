@@ -115,7 +115,9 @@ public class MonitorService extends Service implements MonitorController {
     }
 
     private void initOverlay() {
-        OverlayConfig overlayConfig = new OverlayConfig(Utils.getGlobalPreferences(this));
+        OverlayConfig overlayConfig = new OverlayConfig(
+                Utils.getGlobalPreferences(this),
+                getResources().getDisplayMetrics());
 
         // Inflate layout
         OverlayBinding overlayViewBinding = OverlayBinding.inflate(LayoutInflater.from(this));

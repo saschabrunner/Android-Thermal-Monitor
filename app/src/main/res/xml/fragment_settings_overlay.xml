@@ -2,9 +2,11 @@
 <androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="Overlay">
-        <EditTextPreference
+        <ListPreference
+            app:entries="@array/overlayPositionEntries"
             app:key="overlayTextGravity"
-            app:title="Overlay position" />
+            app:title="Overlay position"
+            app:entryValues="@array/overlayPositionValues" />
         <EditTextPreference
             app:key="overlayBackgroundColor"
             app:title="Background color and opacity" />
@@ -14,11 +16,12 @@
         <EditTextPreference
             app:key="overlayTextSize"
             app:title="Text size" />
-        <EditTextPreference
+        <CheckBoxPreference
             app:key="overlayLabelVisibility"
             app:title="Show labels" />
         <EditTextPreference
             app:key="overlayLabelWidth"
+            app:dependency="overlayLabelVisibility"
             app:title="Label width" />
     </PreferenceCategory>
 

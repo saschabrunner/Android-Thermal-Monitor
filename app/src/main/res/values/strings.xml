@@ -39,4 +39,8 @@
     <string name="enableRootGloballyFirstToUseThisFeature">Enable root globally first to use this feature</string>
     <string name="noThermalZonesFound">No thermal zones found</string>
     <string name="couldNotFindAnyThermalZones">Could not find any thermal zones</string>
+    <string name="topLeft">Top Left</string>
+    <string name="topRight">Top Right</string>
+    <string name="bottomLeft">Bottom Left</string>
+    <string name="bottomRight">Bottom Right</string>
 </resources>
