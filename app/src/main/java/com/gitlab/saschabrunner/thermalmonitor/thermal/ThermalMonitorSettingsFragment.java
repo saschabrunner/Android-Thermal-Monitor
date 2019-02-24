@@ -5,7 +5,6 @@ import android.util.Log;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
-import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
@@ -44,12 +43,14 @@ public class ThermalMonitorSettingsFragment extends PreferenceFragmentCompat {
     /**
      * Load available thermal zones with current settings.
      * TODO: It's the easiest way to load the thermal zones respecting the current user
-     * settings, but it's slow and should be replaced
+     * settings, but it's slow and should be replaced, together with the custom selection
+     * dialog that will be built later.
      *
      * @param preference MultiSelectListPreference
      * @return true
      */
     private boolean populateThermalZoneList(Preference preference) {
+        MultiSelectListPreference pref = ((MultiSelectListPreference) preference);
         ThermalMonitor monitor;
         if (GlobalPreferences.getInstance().rootEnabled()) {
             try {
@@ -57,19 +58,19 @@ public class ThermalMonitorSettingsFragment extends PreferenceFragmentCompat {
                         RootIPCSingleton.getInstance(getContext()));
             } catch (RootAccessException e) {
                 Log.e(TAG, "Could not acquire root access", e);
-                return false;
+                pref.setDialogMessage(R.string.couldNotAcquireRootAccess);
+                return true;
             }
         } else {
             monitor = new ThermalMonitor();
         }
 
-        List<ThermalZoneInfo> thermalZoneInfos;
-        try {
-            thermalZoneInfos = monitor.getThermalZoneInfos(
-                    Utils.getGlobalPreferences(preference.getContext()));
-        } catch (MonitorException e) {
-            Log.e(TAG, "Couldn't get thermal zones", e);
-            return false;
+        List<ThermalZoneInfo> thermalZoneInfos = monitor.getThermalZoneInfos(
+                Utils.getGlobalPreferences(preference.getContext()));
+
+        if (thermalZoneInfos.isEmpty()) {
+            pref.setDialogMessage(R.string.couldNotFindAnyThermalZones);
+            return true;
         }
 
         String[] entries = new String[thermalZoneInfos.size()];
@@ -81,8 +82,8 @@ public class ThermalMonitorSettingsFragment extends PreferenceFragmentCompat {
             entrieValues[i] = String.valueOf(info.getId());
         }
 
-        ((MultiSelectListPreference) preference).setEntries(entries);
-        ((MultiSelectListPreference) preference).setEntryValues(entrieValues);
+        pref.setEntries(entries);
+        pref.setEntryValues(entrieValues);
 
         return true;
     }

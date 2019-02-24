@@ -39,7 +39,8 @@ public class ThermalMonitor implements Runnable, Monitor {
     @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_NO_ENABLED_THERMAL_ZONES,
             FAILURE_REASON_TYPE_NO_PERMISSION, FAILURE_REASON_TEMP_NO_PERMISSION,
             FAILURE_REASON_NO_ROOT_IPC, FAILURE_REASON_TYPE_NOT_READABLE,
-            FAILURE_REASON_TEMP_NOT_READABLE, FAILURE_REASON_THERMAL_ZONES_NOT_READABLE})
+            FAILURE_REASON_TEMP_NOT_READABLE, FAILURE_REASON_THERMAL_ZONES_NOT_READABLE,
+            FAILURE_REASON_ILLEGAL_CONFIGURATION})
     public @interface FAILURE_REASON {
     }
 
@@ -52,6 +53,7 @@ public class ThermalMonitor implements Runnable, Monitor {
     public static final int FAILURE_REASON_TYPE_NOT_READABLE = 6;
     public static final int FAILURE_REASON_TEMP_NOT_READABLE = 7;
     public static final int FAILURE_REASON_THERMAL_ZONES_NOT_READABLE = 8;
+    public static final int FAILURE_REASON_ILLEGAL_CONFIGURATION = 9;
 
     private final IIPC rootIpc;
 
@@ -70,9 +72,14 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     @Override
     @FAILURE_REASON
-    public int checkSupported(SharedPreferences monitorPreferences) throws MonitorException {
+    public int checkSupported(SharedPreferences monitorPreferences) {
         // Preferences to check support with
-        this.preferences = new Preferences(monitorPreferences);
+        try {
+            this.preferences = new Preferences(monitorPreferences);
+        } catch (MonitorException e) {
+            Log.e(TAG, "Monitor configuration is in an illegal state", e);
+            return FAILURE_REASON_ILLEGAL_CONFIGURATION;
+        }
 
         if (preferences.useRoot) {
             return checkSupportedRoot();
@@ -89,7 +96,7 @@ public class ThermalMonitor implements Runnable, Monitor {
         }
 
         // Check if dirs for thermal zones are present
-        List<File> thermalZoneDirs = getThermalZoneDirs();
+        List<File> thermalZoneDirs = getFilteredThermalZoneDirs();
         if (thermalZoneDirs.isEmpty()) {
             return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
         }
@@ -122,7 +129,7 @@ public class ThermalMonitor implements Runnable, Monitor {
         // Check if dirs for thermal zones are present
         List<String> thermalZoneDirs;
         try {
-            thermalZoneDirs = getThermalZoneDirsRoot();
+            thermalZoneDirs = getFilteredThermalZoneDirsRoot();
             if (thermalZoneDirs.isEmpty()) {
                 return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
             }
@@ -225,20 +232,31 @@ public class ThermalMonitor implements Runnable, Monitor {
         }
     }
 
-    public List<ThermalZoneInfo> getThermalZoneInfos(SharedPreferences monitorPreferences)
-            throws MonitorException {
-        if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
-            throw new MonitorException(R.string.monitor_not_supported_with_supplied_preferences);
+    /**
+     * Returns information about all the accessible thermal zones accessible using the current
+     * preferences (ignoring the preference KEY_THERMAL_MONITOR_THERMAL_ZONES, instead
+     * respecting all the zones).
+     *
+     * @param monitorPreferences SharedPreferences containing the configuration for this module.
+     * @return A list of ThermalZoneInfos which is empty if no zones were found or an error occured.
+     * Use checkSupported() to get more info.
+     */
+    @NonNull
+    public List<ThermalZoneInfo> getThermalZoneInfos(SharedPreferences monitorPreferences) {
+        try {
+            this.preferences = new Preferences(monitorPreferences);
+        } catch (MonitorException e) {
+            Log.e(TAG, "Monitor configuration is in an illegal state", e);
+            return Collections.emptyList();
         }
 
-        this.preferences = new Preferences(monitorPreferences);
         if (preferences.useRoot) {
             try {
                 this.thermalZones = getThermalZonesRoot(getThermalZoneDirsRoot());
             } catch (RemoteException e) {
+                // This should not happen if checkSupported() doesn't return an error
                 Log.e(TAG, "Failed retrieving thermal zones using root", e);
-                throw new MonitorException(
-                        R.string.monitor_not_supported_with_supplied_preferences);
+                return Collections.emptyList();
             }
         } else {
             this.thermalZones = getThermalZones(getThermalZoneDirs());
@@ -258,8 +276,9 @@ public class ThermalMonitor implements Runnable, Monitor {
     }
 
     private List<File> getThermalZoneDirs() {
-        return Arrays.asList(new File(THERMAL_ZONES_DIR).listFiles((dir, name)
-                -> name.toLowerCase().matches(THERMAL_ZONE_REGEX)));
+        File[] dirs = new File(THERMAL_ZONES_DIR).listFiles((dir, name)
+                -> name.toLowerCase().matches(THERMAL_ZONE_REGEX));
+        return dirs != null ? Arrays.asList(dirs) : Collections.emptyList();
     }
 
     private List<File> getFilteredThermalZoneDirs() {

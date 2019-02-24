@@ -37,4 +37,6 @@
     <string name="canNotFindAnyCpusInSysDevicesSystemCpu">Can\'t find any CPUs in /sys/devices/system/cpu.</string>
     <string name="canNotReadFrequencyOfACpu">Can\'t read frequency of a CPU.</string>
     <string name="enableRootGloballyFirstToUseThisFeature">Enable root globally first to use this feature</string>
+    <string name="noThermalZonesFound">No thermal zones found</string>
+    <string name="couldNotFindAnyThermalZones">Could not find any thermal zones</string>
 </resources>

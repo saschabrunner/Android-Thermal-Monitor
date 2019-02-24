@@ -11,8 +11,10 @@
             app:title="Use root to access thermal zones" />
 
         <MultiSelectListPreference
+            app:entries="@array/emptyStringArray"
             app:key="thermalMonitorThermalZones"
-            app:title="Select thermal zones to monitor" />
+            app:title="Select thermal zones to monitor"
+            app:entryValues="@array/emptyStringArray" />
 
         <EditTextPreference
             app:key="thermalMonitorRefreshInterval"
