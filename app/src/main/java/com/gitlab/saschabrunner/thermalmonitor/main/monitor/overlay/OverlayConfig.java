@@ -22,15 +22,11 @@ public class OverlayConfig {
                 PreferenceConstants.KEY_OVERLAY_GRAVITY,
                 PreferenceConstants.DEF_OVERLAY_GRAVITY)));
 
-        // Use Long.decode because value is unsigned 32 bit integer
-        this.backgroundColor = Long.decode(Objects.requireNonNull(preferences.getString(
-                PreferenceConstants.KEY_OVERLAY_BACKGROUND_COLOR,
-                PreferenceConstants.DEF_OVERLAY_BACKGROUND_COLOR))).intValue();
+        this.backgroundColor = preferences.getInt(PreferenceConstants.KEY_OVERLAY_BACKGROUND_COLOR,
+                PreferenceConstants.DEF_OVERLAY_BACKGROUND_COLOR);
 
-        // Use Long.decode because value is unsigned 32 bit integer
-        this.textColor = Long.decode(Objects.requireNonNull(preferences.getString(
-                PreferenceConstants.KEY_OVERLAY_TEXT_COLOR,
-                PreferenceConstants.DEF_OVERLAY_TEXT_COLOR))).intValue();
+        this.textColor = preferences.getInt(PreferenceConstants.KEY_OVERLAY_TEXT_COLOR,
+                PreferenceConstants.DEF_OVERLAY_TEXT_COLOR);
 
         this.textSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 Float.parseFloat(Objects.requireNonNull(preferences.getString(

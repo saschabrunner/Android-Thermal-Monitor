@@ -8,12 +8,14 @@
             app:entryValues="@array/overlayPositionValues"
             app:key="overlayTextGravity"
             app:title="Overlay position" />
-        <EditTextPreference
-            app:defaultValue="0x80FFFFFF"
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
+            app:cpv_showAlphaSlider="true"
+            app:defaultValue="@color/overlayBackgroundColorDefault"
             app:key="overlayBackgroundColor"
             app:title="Background color and opacity" />
-        <EditTextPreference
-            app:defaultValue="0xFF000000"
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
+            app:cpv_showAlphaSlider="true"
+            app:defaultValue="@color/overlayTextColorDefault"
             app:key="overlayTextColor"
             app:title="Text color" />
         <EditTextPreference

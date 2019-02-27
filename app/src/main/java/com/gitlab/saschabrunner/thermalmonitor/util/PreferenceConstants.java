@@ -32,8 +32,8 @@ public class PreferenceConstants {
     public static final boolean DEF_CPU_FREQ_MONITOR_ENABLED = true;
     public static final String DEF_CPU_FREQ_MONITOR_REFRESH_INTERVAL = String.valueOf(1000);
     public static final String DEF_OVERLAY_GRAVITY = String.valueOf(Gravity.START);
-    public static final String DEF_OVERLAY_BACKGROUND_COLOR = String.valueOf(0x80FFFFFF);
-    public static final String DEF_OVERLAY_TEXT_COLOR = String.valueOf(Color.BLACK);
+    public static final int DEF_OVERLAY_BACKGROUND_COLOR = 0x80FFFFFF;
+    public static final int DEF_OVERLAY_TEXT_COLOR = Color.BLACK;
     public static final String DEF_OVERLAY_TEXT_SIZE = String.valueOf(10);
     public static final boolean DEF_OVERLAY_LABEL_VISIBILITY = true;
     public static final String DEF_OVERLAY_LABEL_WIDTH = String.valueOf(130);

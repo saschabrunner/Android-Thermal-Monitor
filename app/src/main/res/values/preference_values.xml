@@ -12,4 +12,6 @@
         <item>0x53</item>
         <item>0x55</item>
     </string-array>
+    <color name="overlayBackgroundColorDefault">#80FFFFFF</color>
+    <color name="overlayTextColorDefault">#FF000000</color>
 </resources>
