@@ -27,6 +27,7 @@ public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
 
     private boolean serviceStarting = false;
+    private boolean serviceInErrorState = false;
 
     private Handler uiUpdateHandler;
     private PeriodicUIUpdater periodicUIUpdater;
@@ -94,6 +95,7 @@ public class HomeFragment extends Fragment {
             updateUiServiceStarting();
             if (!startService()) {
                 serviceStarting = false;
+                serviceInErrorState = true;
                 updateUiServiceError();
             }
         }
@@ -132,7 +134,6 @@ public class HomeFragment extends Fragment {
         private int interval;
         private int waitingTicks;
         private int currentWaitingTicks = 0;
-        private boolean inErrorState = false;
 
         /**
          * @param handler      Handler to schedule continued execution on.
@@ -158,12 +159,12 @@ public class HomeFragment extends Fragment {
         public void run() {
             if (MonitorService.isServiceRunning()) {
                 currentWaitingTicks = 0;
-                inErrorState = false;
+                serviceInErrorState = false;
                 serviceStarting = false;
                 updateUiServiceRunning();
             } else {
                 if (serviceStarting) {
-                    inErrorState = false;
+                    serviceInErrorState = false;
                     if (currentWaitingTicks < waitingTicks) {
                         currentWaitingTicks++;
                         updateUiServiceStarting();
@@ -173,12 +174,12 @@ public class HomeFragment extends Fragment {
                                 "waitingTicks: " + waitingTicks + ")");
                         currentWaitingTicks = 0;
                         serviceStarting = false;
-                        inErrorState = true;
+                        serviceInErrorState = true;
                         MessageUtils.showInfoDialog(getContext(), R.string.timeout,
                                 R.string.timedOutWaitingForServiceToStart);
                         updateUiServiceError();
                     }
-                } else if (!inErrorState) {
+                } else if (!serviceInErrorState) {
                     currentWaitingTicks = 0;
                     updateUiServiceStopped();
                 }
