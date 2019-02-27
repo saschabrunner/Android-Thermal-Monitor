@@ -3,6 +3,7 @@
 
     <PreferenceCategory app:title="Global">
         <CheckBoxPreference
+            app:defaultValue="false"
             app:key="rootEnabled"
             app:title="Enable root functions" />
         <Preference

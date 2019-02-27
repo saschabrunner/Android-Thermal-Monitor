@@ -22,18 +22,19 @@ public class PreferenceConstants {
     public static final String KEY_OVERLAY_LABEL_VISIBILITY = "overlayLabelVisibility";
     public static final String KEY_OVERLAY_LABEL_WIDTH = "overlayLabelWidth";
 
-    /* Defaults */
+    /* Defaults (only provided as fallback, normally the defaults in the preference XMLs should
+     * be applied at application launch */
     public static final boolean DEF_ROOT_ENABLED = false;
     public static final boolean DEF_THERMAL_MONITOR_ENABLED = false;
     public static final boolean DEF_THERMAL_MONITOR_USE_ROOT = false;
     public static final String DEF_THERMAL_MONITOR_REFRESH_INTERVAL = String.valueOf(1000);
     public static final Set<String> DEF_THERMAL_MONITOR_THERMAL_ZONES = Collections.emptySet();
-    public static final boolean DEF_CPU_FREQ_MONITOR_ENABLED = false;
+    public static final boolean DEF_CPU_FREQ_MONITOR_ENABLED = true;
     public static final String DEF_CPU_FREQ_MONITOR_REFRESH_INTERVAL = String.valueOf(1000);
     public static final String DEF_OVERLAY_GRAVITY = String.valueOf(Gravity.START);
     public static final String DEF_OVERLAY_BACKGROUND_COLOR = String.valueOf(0x80FFFFFF);
     public static final String DEF_OVERLAY_TEXT_COLOR = String.valueOf(Color.BLACK);
-    public static final String DEF_OVERLAY_TEXT_SIZE = String.valueOf(24);
+    public static final String DEF_OVERLAY_TEXT_SIZE = String.valueOf(10);
     public static final boolean DEF_OVERLAY_LABEL_VISIBILITY = true;
-    public static final String DEF_OVERLAY_LABEL_WIDTH = String.valueOf(260);
+    public static final String DEF_OVERLAY_LABEL_WIDTH = String.valueOf(130);
 }

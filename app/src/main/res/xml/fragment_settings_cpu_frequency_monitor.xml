@@ -3,10 +3,12 @@
 
     <PreferenceCategory app:title="CPU Frequency Monitor">
         <CheckBoxPreference
+            app:defaultValue="true"
             app:key="cpuFreqMonitorEnabled"
             app:title="Enable CPU frequency monitoring" />
 
         <EditTextPreference
+            app:defaultValue="1000"
             app:key="cpuFreqMonitorRefreshInterval"
             app:title="Refresh interval (in ms)" />
     </PreferenceCategory>

@@ -3,20 +3,23 @@
 
     <PreferenceCategory app:title="Thermal Monitor">
         <CheckBoxPreference
+            app:defaultValue="false"
             app:key="thermalMonitorEnabled"
             app:title="Enable thermal monitoring" />
 
         <CheckBoxPreference
+            app:defaultValue="false"
             app:key="thermalMonitorUseRoot"
             app:title="Use root to access thermal zones" />
 
         <MultiSelectListPreference
             app:entries="@array/emptyStringArray"
+            app:entryValues="@array/emptyStringArray"
             app:key="thermalMonitorThermalZones"
-            app:title="Select thermal zones to monitor"
-            app:entryValues="@array/emptyStringArray" />
+            app:title="Select thermal zones to monitor" />
 
         <EditTextPreference
+            app:defaultValue="1000"
             app:key="thermalMonitorRefreshInterval"
             app:title="Refresh interval (in ms)" />
     </PreferenceCategory>

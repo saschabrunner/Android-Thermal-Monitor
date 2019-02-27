@@ -3,25 +3,31 @@
 
     <PreferenceCategory app:title="Overlay">
         <ListPreference
+            app:defaultValue="0x33"
             app:entries="@array/overlayPositionEntries"
+            app:entryValues="@array/overlayPositionValues"
             app:key="overlayTextGravity"
-            app:title="Overlay position"
-            app:entryValues="@array/overlayPositionValues" />
+            app:title="Overlay position" />
         <EditTextPreference
+            app:defaultValue="0x80FFFFFF"
             app:key="overlayBackgroundColor"
             app:title="Background color and opacity" />
         <EditTextPreference
+            app:defaultValue="0xFF000000"
             app:key="overlayTextColor"
             app:title="Text color" />
         <EditTextPreference
+            app:defaultValue="10"
             app:key="overlayTextSize"
             app:title="Text size" />
         <CheckBoxPreference
+            app:defaultValue="true"
             app:key="overlayLabelVisibility"
             app:title="Show labels" />
         <EditTextPreference
-            app:key="overlayLabelWidth"
+            app:defaultValue="130"
             app:dependency="overlayLabelVisibility"
+            app:key="overlayLabelWidth"
             app:title="Label width" />
     </PreferenceCategory>
 
