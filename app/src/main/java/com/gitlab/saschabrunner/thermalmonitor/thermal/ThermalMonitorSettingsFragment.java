@@ -11,7 +11,9 @@ import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
 import java.util.List;
+import java.util.Objects;
 
+import androidx.fragment.app.DialogFragment;
 import androidx.preference.MultiSelectListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
@@ -37,7 +39,7 @@ public class ThermalMonitorSettingsFragment extends PreferenceFragmentCompat {
 
         // Load available thermal zones on click with current settings
         Preference zones = findPreference(PreferenceConstants.KEY_THERMAL_MONITOR_THERMAL_ZONES);
-        zones.setOnPreferenceClickListener(this::populateThermalZoneList);
+        //zones.setOnPreferenceClickListener(this::populateThermalZoneList);
     }
 
     /**
@@ -86,5 +88,21 @@ public class ThermalMonitorSettingsFragment extends PreferenceFragmentCompat {
         pref.setEntryValues(entrieValues);
 
         return true;
+    }
+
+    @Override
+    public void onDisplayPreferenceDialog(Preference preference) {
+        DialogFragment dialogFragment = null;
+
+        if (preference instanceof ThermalZonePickerPreference) {
+            dialogFragment = ThermalZonePickerDialogFragment.newInstance(preference.getKey());
+        }
+
+        if (dialogFragment != null) {
+            dialogFragment.setTargetFragment(this, 0);
+            dialogFragment.show(Objects.requireNonNull(getFragmentManager()), null);
+        } else {
+            super.onDisplayPreferenceDialog(preference);
+        }
     }
 }
