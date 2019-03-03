@@ -19,9 +19,12 @@
             app:defaultValue="@color/overlayTextColorDefault"
             app:key="overlayTextColor"
             app:title="Text color" />
-        <EditTextPreference
+        <com.gitlab.saschabrunner.thermalmonitor.main.ui.CustomSeekBarPreference
+            android:max="50"
             app:defaultValue="10"
             app:key="overlayTextSize"
+            app:min="4"
+            app:stepWidth="2"
             app:title="Text size" />
         <CheckBoxPreference
             app:defaultValue="true"

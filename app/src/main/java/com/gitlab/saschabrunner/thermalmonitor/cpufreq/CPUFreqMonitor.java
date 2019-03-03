@@ -190,9 +190,9 @@ public class CPUFreqMonitor implements Runnable, Monitor {
         private final int interval;
 
         private Preferences(SharedPreferences preferences) throws MonitorException {
-            this.interval = Integer.parseInt(Objects.requireNonNull(preferences.getString(
+            this.interval = preferences.getInt(
                     PreferenceConstants.KEY_CPU_FREQ_MONITOR_REFRESH_INTERVAL,
-                    PreferenceConstants.DEF_CPU_FREQ_MONITOR_REFRESH_INTERVAL)));
+                    PreferenceConstants.DEF_CPU_FREQ_MONITOR_REFRESH_INTERVAL);
 
             validate();
         }

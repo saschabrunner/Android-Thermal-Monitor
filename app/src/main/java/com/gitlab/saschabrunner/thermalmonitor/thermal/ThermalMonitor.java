@@ -376,9 +376,9 @@ public class ThermalMonitor implements Runnable, Monitor {
                     PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT,
                     PreferenceConstants.DEF_THERMAL_MONITOR_USE_ROOT);
 
-            this.interval = Integer.parseInt(Objects.requireNonNull(preferences.getString(
+            this.interval = preferences.getInt(
                     PreferenceConstants.KEY_THERMAL_MONITOR_REFRESH_INTERVAL,
-                    PreferenceConstants.DEF_THERMAL_MONITOR_REFRESH_INTERVAL)));
+                    PreferenceConstants.DEF_THERMAL_MONITOR_REFRESH_INTERVAL);
 
             Set<String> thermalZonesSet = Objects.requireNonNull(preferences.getStringSet(
                     PreferenceConstants.KEY_THERMAL_MONITOR_THERMAL_ZONES,

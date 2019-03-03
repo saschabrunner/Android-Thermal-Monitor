@@ -28,10 +28,11 @@ public class OverlayConfig {
         this.textColor = preferences.getInt(PreferenceConstants.KEY_OVERLAY_TEXT_COLOR,
                 PreferenceConstants.DEF_OVERLAY_TEXT_COLOR);
 
-        this.textSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                Float.parseFloat(Objects.requireNonNull(preferences.getString(
+        this.textSize = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                preferences.getInt(
                         PreferenceConstants.KEY_OVERLAY_TEXT_SIZE,
-                        PreferenceConstants.DEF_OVERLAY_TEXT_SIZE))),
+                        PreferenceConstants.DEF_OVERLAY_TEXT_SIZE),
                 displayMetrics);
 
         this.labelVisibility = preferences.getBoolean(
