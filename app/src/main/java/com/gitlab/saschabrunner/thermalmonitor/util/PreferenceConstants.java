@@ -36,5 +36,5 @@ public class PreferenceConstants {
     public static final int DEF_OVERLAY_TEXT_COLOR = Color.BLACK;
     public static final String DEF_OVERLAY_TEXT_SIZE = String.valueOf(10);
     public static final boolean DEF_OVERLAY_LABEL_VISIBILITY = true;
-    public static final String DEF_OVERLAY_LABEL_WIDTH = String.valueOf(130);
+    public static final int DEF_OVERLAY_LABEL_WIDTH = 130;
 }

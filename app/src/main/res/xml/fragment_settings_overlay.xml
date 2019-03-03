@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="Overlay">
         <ListPreference
@@ -26,10 +27,13 @@
             app:defaultValue="true"
             app:key="overlayLabelVisibility"
             app:title="Show labels" />
-        <EditTextPreference
+        <com.gitlab.saschabrunner.thermalmonitor.main.ui.CustomSeekBarPreference
+            android:max="300"
             app:defaultValue="130"
             app:dependency="overlayLabelVisibility"
             app:key="overlayLabelWidth"
+            app:min="30"
+            app:stepWidth="10"
             app:title="Label width" />
     </PreferenceCategory>
 

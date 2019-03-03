@@ -14,4 +14,7 @@
     </string-array>
     <color name="overlayBackgroundColorDefault">#80FFFFFF</color>
     <color name="overlayTextColorDefault">#FF000000</color>
+    <declare-styleable name="CustomSeekBarPreference">
+        <attr name="stepWidth" format="integer" />
+    </declare-styleable>
 </resources>

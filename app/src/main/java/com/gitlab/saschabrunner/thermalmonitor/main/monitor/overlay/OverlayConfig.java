@@ -38,10 +38,11 @@ public class OverlayConfig {
                 PreferenceConstants.KEY_OVERLAY_LABEL_VISIBILITY,
                 PreferenceConstants.DEF_OVERLAY_LABEL_VISIBILITY) ? View.VISIBLE : View.GONE;
 
-        this.labelWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                Float.parseFloat(Objects.requireNonNull(preferences.getString(
+        this.labelWidth = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                preferences.getInt(
                         PreferenceConstants.KEY_OVERLAY_LABEL_WIDTH,
-                        PreferenceConstants.DEF_OVERLAY_LABEL_WIDTH))),
+                        PreferenceConstants.DEF_OVERLAY_LABEL_WIDTH),
                 displayMetrics);
     }
 
