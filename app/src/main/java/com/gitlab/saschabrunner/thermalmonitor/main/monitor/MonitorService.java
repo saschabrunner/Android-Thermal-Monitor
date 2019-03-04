@@ -193,9 +193,10 @@ public class MonitorService extends Service implements MonitorController {
             thermalMonitor = new ThermalMonitor();
         }
 
-        if (thermalMonitor.checkSupported(Utils.getGlobalPreferences(this))
-                == ThermalMonitor.FAILURE_REASON_OK) {
-            thermalMonitor.init(this, Utils.getGlobalPreferences(this));
+        MonitorPreferences preferences =
+                ThermalMonitor.Preferences.getPreferences(Utils.getGlobalPreferences(this));
+        if (thermalMonitor.checkSupported(preferences) == ThermalMonitor.FAILURE_REASON_OK) {
+            thermalMonitor.init(this, preferences);
             monitors.add(thermalMonitor);
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         } else {
@@ -205,9 +206,10 @@ public class MonitorService extends Service implements MonitorController {
 
     private void initCpuFreqMonitoring() throws MonitorException {
         CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
-        if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
-                == CPUFreqMonitor.FAILURE_REASON_OK) {
-            cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
+        MonitorPreferences preferences =
+                CPUFreqMonitor.Preferences.getPreferences(Utils.getGlobalPreferences(this));
+        if (cpuFreqMonitor.checkSupported(preferences) == CPUFreqMonitor.FAILURE_REASON_OK) {
+            cpuFreqMonitor.init(this, preferences);
             monitors.add(cpuFreqMonitor);
             monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
         } else {

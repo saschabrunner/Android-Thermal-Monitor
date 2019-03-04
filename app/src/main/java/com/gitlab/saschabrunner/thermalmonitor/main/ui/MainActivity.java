@@ -173,7 +173,8 @@ public class MainActivity extends AppCompatActivity
         }
 
         int thermalMonitoringAvailable =
-                thermalMonitor.checkSupported(Utils.getGlobalPreferences(this));
+                thermalMonitor.checkSupported(ThermalMonitor.Preferences
+                        .getPreferences(Utils.getGlobalPreferences(this)));
         switch (thermalMonitoringAvailable) {
             case ThermalMonitor.FAILURE_REASON_OK:
                 break;
@@ -217,6 +218,10 @@ public class MainActivity extends AppCompatActivity
                         R.string.canNotReadTypeOfAThermalZone);
                 success = false;
                 break;
+            case ThermalMonitor.FAILURE_REASON_ILLEGAL_CONFIGURATION:
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                        R.string.monitorConfigurationInvalid);
+                break;
             default:
                 MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
                         R.string.unknownError);
@@ -232,7 +237,8 @@ public class MainActivity extends AppCompatActivity
 
         CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
         int cpuFreqMonitoringAvailable =
-                cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this));
+                cpuFreqMonitor.checkSupported(CPUFreqMonitor.Preferences
+                        .getPreferences(Utils.getGlobalPreferences(this)));
         switch (cpuFreqMonitoringAvailable) {
             case CPUFreqMonitor.FAILURE_REASON_OK:
                 break;
@@ -249,6 +255,15 @@ public class MainActivity extends AppCompatActivity
             case CPUFreqMonitor.FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION:
                 MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
                         R.string.canNotReadFrequencyOfACpu);
+                success = false;
+                break;
+            case CPUFreqMonitor.FAILURE_REASON_ILLEGAL_CONFIGURATION:
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                        R.string.monitorConfigurationInvalid);
+                break;
+            default:
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                        R.string.unknownError);
                 success = false;
                 break;
         }

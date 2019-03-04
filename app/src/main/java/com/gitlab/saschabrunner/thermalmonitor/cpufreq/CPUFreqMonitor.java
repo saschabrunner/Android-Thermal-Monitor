@@ -9,6 +9,7 @@ import com.gitlab.saschabrunner.thermalmonitor.main.monitor.Monitor;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorController;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorItem;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorPreferences;
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
 import java.io.File;
@@ -30,7 +31,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_DIR_EMPTY,
-            FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION})
+            FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION, FAILURE_REASON_ILLEGAL_CONFIGURATION})
     public @interface FAILURE_REASON {
     }
 
@@ -38,6 +39,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
     public static final int FAILURE_REASON_DIR_NOT_EXISTS = 1;
     public static final int FAILURE_REASON_DIR_EMPTY = 2;
     public static final int FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION = 3;
+    public static final int FAILURE_REASON_ILLEGAL_CONFIGURATION = 4;
 
     private Context context;
     private Preferences preferences;
@@ -51,9 +53,11 @@ public class CPUFreqMonitor implements Runnable, Monitor {
 
     @Override
     @FAILURE_REASON
-    public int checkSupported(SharedPreferences monitorPreferences) throws MonitorException {
+    public int checkSupported(MonitorPreferences preferences) throws MonitorException {
         // Validate preferences
-        Preferences preferences = new Preferences(monitorPreferences);
+        if (!(preferences instanceof Preferences)) {
+            return FAILURE_REASON_ILLEGAL_CONFIGURATION;
+        }
 
         // Check if dir is present
         File cpusDir = new File("/sys/devices/system/cpu");
@@ -87,13 +91,13 @@ public class CPUFreqMonitor implements Runnable, Monitor {
     }
 
     @Override
-    public void init(MonitorController controller, SharedPreferences monitorPreferences)
+    public void init(MonitorController controller, MonitorPreferences preferences)
             throws MonitorException {
-        if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
+        if (checkSupported(preferences) != FAILURE_REASON_OK) {
             throw new MonitorException(R.string.monitor_not_supported_with_supplied_preferences);
         }
 
-        this.preferences = new Preferences(monitorPreferences);
+        this.preferences = (Preferences) preferences;
         this.controller = controller;
         this.cpus = getCpus();
         this.monitorItemByCpu = new HashMap<>();
@@ -186,7 +190,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
         });
     }
 
-    private static class Preferences {
+    public static class Preferences extends MonitorPreferences {
         private final int interval;
 
         private Preferences(SharedPreferences preferences) throws MonitorException {
@@ -201,6 +205,11 @@ public class CPUFreqMonitor implements Runnable, Monitor {
             if (interval < 500) {
                 throw new MonitorException(R.string.interval_must_be_at_least_500ms);
             }
+        }
+
+        public static Preferences getPreferences(SharedPreferences preferences)
+                throws MonitorException {
+            return new Preferences(preferences);
         }
     }
 }

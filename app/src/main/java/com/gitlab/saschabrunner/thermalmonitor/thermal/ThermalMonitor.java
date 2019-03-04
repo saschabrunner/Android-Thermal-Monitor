@@ -9,6 +9,7 @@ import com.gitlab.saschabrunner.thermalmonitor.main.monitor.Monitor;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorController;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorItem;
+import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorPreferences;
 import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
@@ -60,7 +61,7 @@ public class ThermalMonitor implements Runnable, Monitor {
     private Preferences preferences;
     private MonitorController controller;
     private List<ThermalZoneBase> thermalZones;
-    private Map<ThermalZoneBase, MonitorItem> monitorItemByThermalZone;
+    private Map<ThermalZoneBase, ThermalZoneMonitorItem> monitorItemByThermalZone;
 
     public ThermalMonitor() {
         this(null);
@@ -72,16 +73,15 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     @Override
     @FAILURE_REASON
-    public int checkSupported(SharedPreferences monitorPreferences) {
+    public int checkSupported(MonitorPreferences preferences) {
         // Preferences to check support with
-        try {
-            this.preferences = new Preferences(monitorPreferences);
-        } catch (MonitorException e) {
-            Log.e(TAG, "Monitor configuration is in an illegal state", e);
+        if (preferences instanceof Preferences) {
+            this.preferences = (Preferences) preferences;
+        } else {
             return FAILURE_REASON_ILLEGAL_CONFIGURATION;
         }
 
-        if (preferences.useRoot) {
+        if (this.preferences.useRoot) {
             return checkSupportedRoot();
         } else {
             return checkSupportedBasic();
@@ -171,15 +171,15 @@ public class ThermalMonitor implements Runnable, Monitor {
     }
 
     @Override
-    public void init(MonitorController controller, SharedPreferences monitorPreferences)
+    public void init(MonitorController controller, MonitorPreferences preferences)
             throws MonitorException {
-        if (checkSupported(monitorPreferences) != FAILURE_REASON_OK) {
+        if (checkSupported(preferences) != FAILURE_REASON_OK) {
             throw new MonitorException(R.string.monitor_not_supported_with_supplied_preferences);
         }
 
-        this.preferences = new Preferences(monitorPreferences);
+        this.preferences = (Preferences) preferences;
         this.controller = controller;
-        if (preferences.useRoot) {
+        if (this.preferences.useRoot) {
             try {
                 this.thermalZones = getThermalZonesRoot(getFilteredThermalZoneDirsRoot());
             } catch (RemoteException e) {
@@ -192,7 +192,7 @@ public class ThermalMonitor implements Runnable, Monitor {
         }
         this.monitorItemByThermalZone = new HashMap<>();
         for (ThermalZoneBase thermalZone : thermalZones) {
-            MonitorItem item = new MonitorItem();
+            ThermalZoneMonitorItem item = new ThermalZoneMonitorItem(thermalZone.getInfo());
             item.setName(thermalZone.getInfo().getType());
             monitorItemByThermalZone.put(thermalZone, item);
             controller.addItem(item);
@@ -232,43 +232,6 @@ public class ThermalMonitor implements Runnable, Monitor {
         }
     }
 
-    /**
-     * Returns information about all the accessible thermal zones accessible using the current
-     * preferences (ignoring the preference KEY_THERMAL_MONITOR_THERMAL_ZONES, instead
-     * respecting all the zones).
-     *
-     * @param monitorPreferences SharedPreferences containing the configuration for this module.
-     * @return A list of ThermalZoneInfos which is empty if no zones were found or an error occured.
-     * Use checkSupported() to get more info.
-     */
-    @NonNull
-    public List<ThermalZoneInfo> getThermalZoneInfos(SharedPreferences monitorPreferences) {
-        try {
-            this.preferences = new Preferences(monitorPreferences);
-        } catch (MonitorException e) {
-            Log.e(TAG, "Monitor configuration is in an illegal state", e);
-            return Collections.emptyList();
-        }
-
-        if (preferences.useRoot) {
-            try {
-                this.thermalZones = getThermalZonesRoot(getThermalZoneDirsRoot());
-            } catch (RemoteException e) {
-                // This should not happen if checkSupported() doesn't return an error
-                Log.e(TAG, "Failed retrieving thermal zones using root", e);
-                return Collections.emptyList();
-            }
-        } else {
-            this.thermalZones = getThermalZones(getThermalZoneDirs());
-        }
-
-        List<ThermalZoneInfo> infos = new ArrayList<>(this.thermalZones.size());
-        for (ThermalZoneBase thermalZone : this.thermalZones) {
-            infos.add(thermalZone.getInfo());
-        }
-        return infos;
-    }
-
     private void updateThermalZones() {
         for (ThermalZoneBase thermalZone : thermalZones) {
             thermalZone.updateTemperature();
@@ -283,6 +246,11 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     private List<File> getFilteredThermalZoneDirs() {
         List<File> thermalZoneDirs = getThermalZoneDirs();
+
+        if (preferences.enableAllThermalZones) {
+            return thermalZoneDirs;
+        }
+
         List<File> filteredThermalZoneDirs = new ArrayList<>();
         for (File thermalZoneDir : thermalZoneDirs) {
             // Check if thermal zone is enabled
@@ -313,6 +281,11 @@ public class ThermalMonitor implements Runnable, Monitor {
     private @NonNull
     List<String> getFilteredThermalZoneDirsRoot() throws RemoteException {
         List<String> files = getThermalZoneDirsRoot();
+
+        if (preferences.enableAllThermalZones) {
+            return files;
+        }
+
         List<String> filteredThermalZoneDirs = new ArrayList<>();
         for (String file : files) {
             // Check if thermal zone is enabled
@@ -366,12 +339,14 @@ public class ThermalMonitor implements Runnable, Monitor {
         }
     }
 
-    private static class Preferences {
+    public static class Preferences extends MonitorPreferences {
         private final boolean useRoot;
         private final int interval;
+        private final boolean enableAllThermalZones; // If true, overrides thermalZoneIds setting
         private final Set<Integer> thermalZoneIds;
 
-        private Preferences(SharedPreferences preferences) throws MonitorException {
+        private Preferences(SharedPreferences preferences, boolean enableAllThermalZones)
+                throws MonitorException {
             this.useRoot = preferences.getBoolean(
                     PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT,
                     PreferenceConstants.DEF_THERMAL_MONITOR_USE_ROOT);
@@ -380,6 +355,7 @@ public class ThermalMonitor implements Runnable, Monitor {
                     PreferenceConstants.KEY_THERMAL_MONITOR_REFRESH_INTERVAL,
                     PreferenceConstants.DEF_THERMAL_MONITOR_REFRESH_INTERVAL);
 
+            this.enableAllThermalZones = enableAllThermalZones;
             Set<String> thermalZonesSet = Objects.requireNonNull(preferences.getStringSet(
                     PreferenceConstants.KEY_THERMAL_MONITOR_THERMAL_ZONES,
                     PreferenceConstants.DEF_THERMAL_MONITOR_THERMAL_ZONES));
@@ -396,6 +372,16 @@ public class ThermalMonitor implements Runnable, Monitor {
             if (interval < 500) {
                 throw new MonitorException(R.string.interval_must_be_at_least_500ms);
             }
+        }
+
+        public static Preferences getPreferences(SharedPreferences preferences)
+                throws MonitorException {
+            return new Preferences(preferences, false);
+        }
+
+        public static Preferences getPreferencesAllThermalZones(SharedPreferences preferences)
+                throws MonitorException {
+            return new Preferences(preferences, true);
         }
     }
 }
