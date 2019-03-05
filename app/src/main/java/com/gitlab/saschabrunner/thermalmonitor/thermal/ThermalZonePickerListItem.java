@@ -8,6 +8,9 @@ public class ThermalZonePickerListItem {
     private ThermalZoneInfo thermalZoneInfo;
     private String currentTemperature;
 
+    private boolean recommended;
+    private boolean excluded;
+
     public ThermalZonePickerListItem(ThermalZoneMonitorItem item) {
         this(item.getThermalZoneInfo(), item.getValue());
     }
@@ -40,5 +43,21 @@ public class ThermalZonePickerListItem {
 
     public void setCurrentTemperature(String currentTemperature) {
         this.currentTemperature = currentTemperature;
+    }
+
+    public boolean isRecommended() {
+        return recommended;
+    }
+
+    public void setRecommended(boolean recommended) {
+        this.recommended = recommended;
+    }
+
+    public boolean isExcluded() {
+        return excluded;
+    }
+
+    public void setExcluded(boolean excluded) {
+        this.excluded = excluded;
     }
 }

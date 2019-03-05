@@ -43,4 +43,7 @@
     <string name="topRight">Top Right</string>
     <string name="bottomLeft">Bottom Left</string>
     <string name="bottomRight">Bottom Right</string>
+    <string name="recommended">Recommended</string>
+    <string name="other">Other</string>
+    <string name="excluded">Excluded</string>
 </resources>

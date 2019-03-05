@@ -17,4 +17,10 @@
     <declare-styleable name="CustomSeekBarPreference">
         <attr name="stepWidth" format="integer" />
     </declare-styleable>
+    <string-array name="thermalMonitorRecommendedZones">
+        <item>msm_therm</item>
+    </string-array>
+    <string-array name="thermalMonitorExcludedZones">
+        <item>none_yet</item>
+    </string-array>
 </resources>

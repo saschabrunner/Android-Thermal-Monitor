@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.google.common.collect.Multimap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +34,8 @@ public class ThermalZonePickerListAdapter
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ThermalZonePickerListItem listItem = items.get(position);
-        holder.getId().setText(String.valueOf(listItem.getThermalZoneInfo().getId())); // TODO: Move to onCreate
-        holder.getType().setText(listItem.getThermalZoneInfo().getType()); // TODO: Move to onCreate
+        holder.getId().setText(String.valueOf(listItem.getThermalZoneInfo().getId()));
+        holder.getType().setText(listItem.getThermalZoneInfo().getType());
         holder.getTemperature().setText(listItem.getCurrentTemperature());
     }
 
@@ -67,13 +68,24 @@ public class ThermalZonePickerListAdapter
      * @param listItem Existing list item to update.
      */
     public void updateListItem(ThermalZonePickerListItem listItem) {
-        if (listItem.getRecyclerViewId() < 0 || listItem.getRecyclerViewId() >= items.size()) {
+        if (listItem.getRecyclerViewId() < 0 || listItem.getRecyclerViewId() >= getItemCount()) {
             throw new ArrayIndexOutOfBoundsException("List item " +
                     listItem.getRecyclerViewId() + " does not exist");
         }
         for (RecyclerView recyclerView : recyclerViews) {
             recyclerView.post(() -> notifyItemChanged(listItem.getRecyclerViewId()));
         }
+    }
+
+    public void setThermalZones(
+            Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName) {
+        int i = 0;
+        for (ThermalZonePickerListItem thermalZone : thermalZoneGroupByName.values()) {
+            thermalZone.setRecyclerViewId(i++);
+            items.add(thermalZone);
+        }
+
+        notifyDataSetChanged();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
