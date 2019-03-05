@@ -1,5 +1,7 @@
 package com.gitlab.saschabrunner.thermalmonitor.thermal;
 
+import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -17,9 +19,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import androidx.annotation.NonNull;
 import androidx.preference.PreferenceDialogFragmentCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCompat {
     private static final String TAG = "ThermalZonePickerDialog";
@@ -38,13 +41,27 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
         super.onBindDialogView(view);
 
         RecyclerView recyclerView = view.findViewById(R.id.dialogThermalZonePickerRecyclerView);
-        recyclerView.setLayoutManager(
-                new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setHasFixedSize(true);
+
+        // Disable animations (otherwise excessive ViewHolders are used in notifyItemChanged())
+        recyclerView.setItemAnimator(null);
 
         ThermalZonePickerListAdapter listAdapter = new ThermalZonePickerListAdapter();
         recyclerView.setAdapter(listAdapter);
 
+        recyclerView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            // TODO
+            @Override
+            public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                super.onDrawOver(c, parent, state);
+            }
+
+            @Override
+            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                super.getItemOffsets(outRect, view, parent, state);
+            }
+        });
 
         ThermalMonitor monitor;
         if (GlobalPreferences.getInstance().rootEnabled()) {
@@ -74,6 +91,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
                 @Override
                 public void updateItem(MonitorItem item) {
+                    // TODO: First time this is called we lock addItem() and reorder with the heuristics, then we add groups
                     ThermalZonePickerListItem listItem = Objects.requireNonNull(listItemByMonitorItem.get((ThermalZoneMonitorItem) item));
                     listItem.setCurrentTemperature(item.getValue());
                     listAdapter.updateListItem(listItem);
