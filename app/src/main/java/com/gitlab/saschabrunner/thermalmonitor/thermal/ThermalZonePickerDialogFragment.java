@@ -14,6 +14,7 @@ import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorItem;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
+import com.gitlab.saschabrunner.thermalmonitor.util.StringUtils;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,8 +38,10 @@ import androidx.recyclerview.widget.RecyclerView;
 public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCompat {
     private static final String TAG = "ThermalZonePickerDialog";
 
+    private ThermalZonePickerListAdapter listAdapter;
     private Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName;
     private boolean todoLock = false;
+    private Map<Integer, String> titleByRecyclerViewPosition = new HashMap<>();
 
     public static ThermalZonePickerDialogFragment newInstance(String key) {
         Bundle args = new Bundle(1);
@@ -52,48 +56,6 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
     protected void onBindDialogView(View view) {
         super.onBindDialogView(view);
 
-        RecyclerView recyclerView = view.findViewById(R.id.dialogThermalZonePickerRecyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setHasFixedSize(true);
-
-        // Disable animations (otherwise excessive ViewHolders are used in notifyItemChanged())
-        recyclerView.setItemAnimator(null);
-
-        ThermalZonePickerListAdapter listAdapter = new ThermalZonePickerListAdapter();
-        recyclerView.setAdapter(listAdapter);
-
-        recyclerView.addItemDecoration(new RecyclerView.ItemDecoration() {
-            // TODO
-
-            private int textSize = 50;
-            private int groupSpacing = 100;
-            private int itemsInGroup = 3;
-
-            private Paint paint = new Paint();
-
-            {
-                paint.setTextSize(textSize);
-            }
-
-            @Override
-            public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-                for (int i = 0; i < parent.getChildCount(); i++) {
-                    View view = parent.getChildAt(i);
-                    int position = parent.getChildAdapterPosition(view);
-                    if (position % itemsInGroup == 0) {
-                        c.drawText("Group " + (position / itemsInGroup + 1), view.getLeft(),
-                                view.getTop() - groupSpacing / 2 + textSize / 3, paint);
-                    }
-                }
-            }
-
-            @Override
-            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-                if (parent.getChildAdapterPosition(view) % itemsInGroup == 0) {
-                    outRect.set(0, groupSpacing, 0, 0);
-                }
-            }
-        });
 
         ThermalMonitor monitor;
         if (GlobalPreferences.getInstance().rootEnabled()) {
@@ -109,62 +71,62 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             monitor = new ThermalMonitor();
         }
 
-        Map<ThermalZoneMonitorItem, ThermalZonePickerListItem> listItemByMonitorItem = new HashMap<>();
-        List<ThermalZonePickerListItem> thermalZones = new ArrayList<>();
+        ThermalMonitorController monitorController = new ThermalMonitorController();
 
         try {
             // TODO: Deinit
-            monitor.init(new MonitorController() {
-                @Override
-                public void addItem(MonitorItem item) {
-                    ThermalZonePickerListItem listItem = new ThermalZonePickerListItem((ThermalZoneMonitorItem) item);
-                    listItemByMonitorItem.put((ThermalZoneMonitorItem) item, listItem);
-//                    listAdapter.addListItem(listItem);
-                    thermalZones.add(listItem);
-                }
-
-                @Override
-                public void updateItem(MonitorItem item) {
-                    ThermalZonePickerListItem listItem = Objects.requireNonNull(listItemByMonitorItem.get((ThermalZoneMonitorItem) item));
-                    listItem.setCurrentTemperature(item.getValue());
-                    if (todoLock) {
-                        listAdapter.updateListItem(listItem);
-                    }
-                }
-
-                @Override
-                public boolean isRunning() {
-                    return true;
-                }
-
-                @Override
-                public void awaitNotPaused() {
-                    // Not needed
-                }
-            }, ThermalMonitor.Preferences.getPreferencesAllThermalZones(Utils.getGlobalPreferences(getContext())));
+            monitor.init(monitorController, ThermalMonitor.Preferences
+                    .getPreferencesAllThermalZones(Utils.getGlobalPreferences(getContext())));
         } catch (MonitorException e) {
             // TODO
             return;
         }
 
 
-        thermalZoneGroupByName = groupThermalZones(thermalZones);
-        listAdapter.setThermalZones(thermalZoneGroupByName);
+        thermalZoneGroupByName = groupThermalZones(monitorController.getThermalZones());
+        listAdapter = new ThermalZonePickerListAdapter(thermalZoneGroupByName);
+
+        calculateTitlePositions();
+
+
         todoLock = true;
 
         new Thread(monitor).start();
 
+
+        RecyclerView recyclerView = view.findViewById(R.id.dialogThermalZonePickerRecyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setHasFixedSize(true);
+        recyclerView.addItemDecoration(new GroupTitleItemDecoration());
+        recyclerView.setAdapter(listAdapter);
+
+        // Disable animations (otherwise excessive ViewHolders are used in notifyItemChanged())
+        recyclerView.setItemAnimator(null);
     }
 
-    private Multimap<String, ThermalZonePickerListItem> groupThermalZones(List<ThermalZonePickerListItem> thermalZones) {
+    private void calculateTitlePositions() {
+        int currentPosition = 0;
+        String currentTitle = null;
+        for (Map.Entry<String, ThermalZonePickerListItem> entry
+                : thermalZoneGroupByName.entries()) {
+            if (!entry.getKey().equals(currentTitle)) {
+                // This item has a new title
+                currentTitle = entry.getKey();
+                titleByRecyclerViewPosition.put(currentPosition, currentTitle);
+            }
+            currentPosition++;
+        }
+    }
+
+    private Multimap<String, ThermalZonePickerListItem> groupThermalZones(Collection<ThermalZonePickerListItem> thermalZones) {
         List<ThermalZonePickerListItem> recommendedZones = new ArrayList<>();
         List<ThermalZonePickerListItem> otherZones = new ArrayList<>();
         Multimap<String, ThermalZonePickerListItem> groupByPrefix = ArrayListMultimap.create();
         List<ThermalZonePickerListItem> excludedZones = new ArrayList<>();
 
-        List<Pattern> recommendedZoneTypes = createRegexPatterns(getResources().getStringArray(
+        List<Pattern> recommendedZoneTypes = StringUtils.createRegexPatterns(getResources().getStringArray(
                 R.array.thermalMonitorRecommendedZones));
-        List<Pattern> excludedZoneTypes = createRegexPatterns(getResources().getStringArray(
+        List<Pattern> excludedZoneTypes = StringUtils.createRegexPatterns(getResources().getStringArray(
                 R.array.thermalMonitorExcludedZones));
 
         // Anything that ends with a number is considered a potential candidate
@@ -177,12 +139,12 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             String type = thermalZone.getThermalZoneInfo().getType();
 
             // Check if zone type is recommended
-            if (matchesAnyPattern(recommendedZoneTypes, type)) {
+            if (StringUtils.matchesAnyPattern(recommendedZoneTypes, type)) {
                 thermalZone.setRecommended(true);
             }
 
             // Check if zone type is excluded
-            if (matchesAnyPattern(excludedZoneTypes, type)) {
+            if (StringUtils.matchesAnyPattern(excludedZoneTypes, type)) {
                 thermalZone.setExcluded(true);
             }
 
@@ -216,7 +178,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
             for (ThermalZonePickerListItem thermalZone : group) {
                 String type = thermalZone.getThermalZoneInfo().getType();
-                if (!matchesAnyPattern(excludedZoneTypes, type)) {
+                if (!StringUtils.matchesAnyPattern(excludedZoneTypes, type)) {
                     atLeastOneNotExcluded = true;
                 }
             }
@@ -251,26 +213,76 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
         return groupByName;
     }
 
-    private boolean matchesAnyPattern(List<Pattern> patterns, String string) {
-        for (Pattern pattern : patterns) {
-            if (pattern.matcher(string).matches()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // TODO: Util class
-    public List<Pattern> createRegexPatterns(String[] strings) {
-        List<Pattern> patterns = new ArrayList<>(strings.length);
-        for (String string : strings) {
-            patterns.add(Pattern.compile(string));
-        }
-        return patterns;
-    }
-
     @Override
     public void onDialogClosed(boolean positiveResult) {
 
+    }
+
+    private class ThermalMonitorController implements MonitorController {
+        Map<ThermalZoneMonitorItem, ThermalZonePickerListItem> listItemByMonitorItem = new LinkedHashMap<>();
+
+        @Override
+        public void addItem(MonitorItem item) {
+            ThermalZonePickerListItem listItem = new ThermalZonePickerListItem((ThermalZoneMonitorItem) item);
+            listItemByMonitorItem.put((ThermalZoneMonitorItem) item, listItem);
+        }
+
+        @Override
+        public void updateItem(MonitorItem item) {
+            ThermalZonePickerListItem listItem = Objects.requireNonNull(listItemByMonitorItem.get((ThermalZoneMonitorItem) item));
+            listItem.setCurrentTemperature(item.getValue());
+            if (todoLock) {
+                listAdapter.updateListItem(listItem);
+            }
+        }
+
+        @Override
+        public boolean isRunning() {
+            return true;
+        }
+
+        @Override
+        public void awaitNotPaused() {
+            // Not needed
+        }
+
+        private Collection<ThermalZonePickerListItem> getThermalZones() {
+            return listItemByMonitorItem.values();
+        }
+    }
+
+    private class GroupTitleItemDecoration extends RecyclerView.ItemDecoration {
+        private int textSize = 50;
+        private int groupSpacing = 100;
+
+        private Paint paint = new Paint();
+
+        public GroupTitleItemDecoration() {
+            paint.setTextSize(textSize);
+        }
+
+        @Override
+        public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            // Draw the titles for the groups
+            for (int i = 0; i < parent.getChildCount(); i++) {
+                View view = parent.getChildAt(i);
+                int position = parent.getChildAdapterPosition(view);
+                String titleForPosition = titleByRecyclerViewPosition.get(position);
+                if (titleForPosition != null) {
+                    c.drawText(titleForPosition, view.getLeft(),
+                            view.getTop() - groupSpacing / 2 + textSize / 3, paint);
+                }
+            }
+        }
+
+        @Override
+        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            // Make space if this view is the first item of a new group
+            String titleForPosition = titleByRecyclerViewPosition.get(parent.getChildAdapterPosition(view));
+            if (titleByRecyclerViewPosition
+                    .containsKey(parent.getChildAdapterPosition(view))) {
+                outRect.set(0, groupSpacing, 0, 0);
+            }
+        }
     }
 }
