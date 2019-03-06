@@ -26,7 +26,8 @@ public class ThermalZonePickerListAdapter
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         Log.v(TAG, "onCreateViewHolder called");
 
-        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.dialog_thermal_zone_picker_list_item, parent, false);
+        View itemView = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.dialog_thermal_zone_picker_list_item, parent, false);
 
         return new ViewHolder(itemView);
     }

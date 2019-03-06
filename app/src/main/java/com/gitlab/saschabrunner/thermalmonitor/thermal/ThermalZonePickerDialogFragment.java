@@ -1,8 +1,10 @@
 package com.gitlab.saschabrunner.thermalmonitor.thermal;
 
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -40,8 +42,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
     private static final int MIN_TEMPERATURE = 1;
 
     private ThermalZonePickerListAdapter listAdapter;
-    private Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName;
-    private Map<Integer, String> titleByRecyclerViewPosition = new HashMap<>();
+    private RecyclerView recyclerView;
     private ThermalMonitor monitor;
     private ThermalMonitorController controller;
     private Thread monitoringThread;
@@ -63,33 +64,37 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
         listAdapter = new ThermalZonePickerListAdapter();
         initializeRecyclerView(view);
 
-        initializeThermalMonitor();
-        startMonitoringThread();
+        createThermalMonitor();
+        new ThermalMonitorInitializer(monitor, monitoringThread, controller,
+                Utils.getGlobalPreferences(getContext())).execute();
     }
 
+    /**
+     * Called in separate thread!
+     */
     private void initAfterWarmup() {
-        thermalZoneGroupByName = groupThermalZones(controller.getThermalZones());
-        calculateTitlePositions();
+        Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName
+                = groupThermalZones(controller.getThermalZones());
         listAdapter.setListContents(thermalZoneGroupByName);
+        recyclerView.post(() -> recyclerView.addItemDecoration(
+                new GroupTitleItemDecoration(calculateTitlePositions(thermalZoneGroupByName))));
     }
 
     private void startMonitoringThread() {
-        monitoringThread = new Thread(monitor);
-        monitoringThread.start();
+
     }
 
     private void initializeRecyclerView(View view) {
-        RecyclerView recyclerView = view.findViewById(R.id.dialogThermalZonePickerRecyclerView);
+        recyclerView = view.findViewById(R.id.dialogThermalZonePickerRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setHasFixedSize(true);
-        recyclerView.addItemDecoration(new GroupTitleItemDecoration());
         recyclerView.setAdapter(listAdapter);
 
         // Disable animations (otherwise excessive ViewHolders are used in notifyItemChanged())
         recyclerView.setItemAnimator(null);
     }
 
-    private void initializeThermalMonitor() {
+    private void createThermalMonitor() {
         if (GlobalPreferences.getInstance().rootEnabled()) {
             try {
                 monitor = new ThermalMonitor(
@@ -104,19 +109,16 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             monitor = new ThermalMonitor();
         }
 
-
-        try {
-            // TODO: Deinit
-            monitor.init(controller, ThermalMonitor.Preferences
-                    .getPreferencesAllThermalZones(Utils.getGlobalPreferences(getContext())));
-        } catch (MonitorException e) {
-            // TODO: Error handling
-        }
+        monitoringThread = new Thread(monitor);
     }
 
-    private void calculateTitlePositions() {
+    private Map<Integer, String> calculateTitlePositions(
+            Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName) {
+        Map<Integer, String> titleByRecyclerViewPosition = new HashMap<>();
+
         int currentPosition = 0;
         String currentTitle = null;
+
         for (Map.Entry<String, ThermalZonePickerListItem> entry
                 : thermalZoneGroupByName.entries()) {
             if (!entry.getKey().equals(currentTitle)) {
@@ -126,6 +128,8 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             }
             currentPosition++;
         }
+
+        return titleByRecyclerViewPosition;
     }
 
     private Multimap<String, ThermalZonePickerListItem> groupThermalZones(Collection<ThermalZonePickerListItem> thermalZones) {
@@ -286,13 +290,18 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
         private int groupSpacing = 100;
 
         private Paint paint = new Paint();
+        private Map<Integer, String> titleByRecyclerViewPosition;
 
-        public GroupTitleItemDecoration() {
+        private GroupTitleItemDecoration(Map<Integer, String> titleByRecyclerViewPosition) {
+            this.titleByRecyclerViewPosition = titleByRecyclerViewPosition;
             paint.setTextSize(textSize);
         }
 
         @Override
-        public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+        public void onDrawOver(
+                @NonNull Canvas c,
+                @NonNull RecyclerView parent,
+                @NonNull RecyclerView.State state) {
             // Draw the titles for the groups
             for (int i = 0; i < parent.getChildCount(); i++) {
                 View view = parent.getChildAt(i);
@@ -306,12 +315,51 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
         }
 
         @Override
-        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+        public void getItemOffsets(
+                @NonNull Rect outRect,
+                @NonNull View view,
+                @NonNull RecyclerView parent,
+                @NonNull RecyclerView.State state) {
             // Make space if this view is the first item of a new group
             String titleForPosition = titleByRecyclerViewPosition.get(parent.getChildAdapterPosition(view));
             if (titleByRecyclerViewPosition
                     .containsKey(parent.getChildAdapterPosition(view))) {
                 outRect.set(0, groupSpacing, 0, 0);
+            }
+        }
+    }
+
+    private static class ThermalMonitorInitializer extends AsyncTask<Void, Void, Void> {
+        private ThermalMonitor monitor;
+        private Thread monitoringThread;
+        private ThermalMonitorController controller;
+        private SharedPreferences preferences;
+
+        private ThermalMonitorInitializer(
+                ThermalMonitor monitor,
+                Thread monitoringThread,
+                ThermalMonitorController controller,
+                SharedPreferences preferences) {
+            this.monitor = monitor;
+            this.monitoringThread = monitoringThread;
+            this.controller = controller;
+            this.preferences = preferences;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            initializeThermalMonitor();
+            monitoringThread.start();
+            return null;
+        }
+
+        private void initializeThermalMonitor() {
+            try {
+                // TODO: Deinit
+                monitor.init(controller, ThermalMonitor.Preferences
+                        .getPreferencesAllThermalZones(preferences));
+            } catch (MonitorException e) {
+                // TODO: Error handling
             }
         }
     }
