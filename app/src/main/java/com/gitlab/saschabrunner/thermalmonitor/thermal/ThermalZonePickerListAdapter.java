@@ -21,14 +21,6 @@ public class ThermalZonePickerListAdapter
     private List<RecyclerView> recyclerViews = new ArrayList<>();
     private List<ThermalZonePickerListItem> items = new ArrayList<>();
 
-    public ThermalZonePickerListAdapter(Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName) {
-        int i = 0;
-        for (ThermalZonePickerListItem thermalZone : thermalZoneGroupByName.values()) {
-            thermalZone.setRecyclerViewId(i++);
-            items.add(thermalZone);
-        }
-    }
-
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -70,6 +62,17 @@ public class ThermalZonePickerListAdapter
         }
         for (RecyclerView recyclerView : recyclerViews) {
             recyclerView.post(() -> notifyItemChanged(listItem.getRecyclerViewId()));
+        }
+    }
+
+    public void setListContents(Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName) {
+        int i = 0;
+        for (ThermalZonePickerListItem thermalZone : thermalZoneGroupByName.values()) {
+            thermalZone.setRecyclerViewId(i++);
+            items.add(thermalZone);
+        }
+        for (RecyclerView recyclerView : recyclerViews) {
+            recyclerView.post(this::notifyDataSetChanged);
         }
     }
 

@@ -37,11 +37,14 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCompat {
     private static final String TAG = "ThermalZonePickerDialog";
+    private static final int MIN_TEMPERATURE = 1;
 
     private ThermalZonePickerListAdapter listAdapter;
     private Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName;
-    private boolean todoLock = false;
     private Map<Integer, String> titleByRecyclerViewPosition = new HashMap<>();
+    private ThermalMonitor monitor;
+    private ThermalMonitorController controller;
+    private Thread monitoringThread;
 
     public static ThermalZonePickerDialogFragment newInstance(String key) {
         Bundle args = new Bundle(1);
@@ -56,44 +59,26 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
     protected void onBindDialogView(View view) {
         super.onBindDialogView(view);
 
+        controller = new ThermalMonitorController();
+        listAdapter = new ThermalZonePickerListAdapter();
+        initializeRecyclerView(view);
 
-        ThermalMonitor monitor;
-        if (GlobalPreferences.getInstance().rootEnabled()) {
-            try {
-                monitor = new ThermalMonitor(
-                        RootIPCSingleton.getInstance(getContext()));
-            } catch (RootAccessException e) {
-                Log.e(TAG, "Could not acquire root access", e);
-//                pref.setDialogMessage(R.string.couldNotAcquireRootAccess);
-                return;
-            }
-        } else {
-            monitor = new ThermalMonitor();
-        }
+        initializeThermalMonitor();
+        startMonitoringThread();
+    }
 
-        ThermalMonitorController monitorController = new ThermalMonitorController();
-
-        try {
-            // TODO: Deinit
-            monitor.init(monitorController, ThermalMonitor.Preferences
-                    .getPreferencesAllThermalZones(Utils.getGlobalPreferences(getContext())));
-        } catch (MonitorException e) {
-            // TODO
-            return;
-        }
-
-
-        thermalZoneGroupByName = groupThermalZones(monitorController.getThermalZones());
-        listAdapter = new ThermalZonePickerListAdapter(thermalZoneGroupByName);
-
+    private void initAfterWarmup() {
+        thermalZoneGroupByName = groupThermalZones(controller.getThermalZones());
         calculateTitlePositions();
+        listAdapter.setListContents(thermalZoneGroupByName);
+    }
 
+    private void startMonitoringThread() {
+        monitoringThread = new Thread(monitor);
+        monitoringThread.start();
+    }
 
-        todoLock = true;
-
-        new Thread(monitor).start();
-
-
+    private void initializeRecyclerView(View view) {
         RecyclerView recyclerView = view.findViewById(R.id.dialogThermalZonePickerRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setHasFixedSize(true);
@@ -102,6 +87,31 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
         // Disable animations (otherwise excessive ViewHolders are used in notifyItemChanged())
         recyclerView.setItemAnimator(null);
+    }
+
+    private void initializeThermalMonitor() {
+        if (GlobalPreferences.getInstance().rootEnabled()) {
+            try {
+                monitor = new ThermalMonitor(
+                        RootIPCSingleton.getInstance(getContext()));
+            } catch (RootAccessException e) {
+                Log.e(TAG, "Could not acquire root access", e);
+//                pref.setDialogMessage(R.string.couldNotAcquireRootAccess);
+                // TODO: Error handling
+                return;
+            }
+        } else {
+            monitor = new ThermalMonitor();
+        }
+
+
+        try {
+            // TODO: Deinit
+            monitor.init(controller, ThermalMonitor.Preferences
+                    .getPreferencesAllThermalZones(Utils.getGlobalPreferences(getContext())));
+        } catch (MonitorException e) {
+            // TODO: Error handling
+        }
     }
 
     private void calculateTitlePositions() {
@@ -149,7 +159,9 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             }
 
             // Check if zone temperature value makes sense (else exclude it)
-            // TODO: Check temperature value
+            if (Integer.parseInt(thermalZone.getCurrentTemperature()) < MIN_TEMPERATURE) {
+                thermalZone.setExcluded(true);
+            }
 
             // Check if zone might be part of a group (eg. tsens_tz_sensorXYZ)
             Matcher matcher = potentialGroupPattern.matcher(type);
@@ -178,7 +190,8 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
             for (ThermalZonePickerListItem thermalZone : group) {
                 String type = thermalZone.getThermalZoneInfo().getType();
-                if (!StringUtils.matchesAnyPattern(excludedZoneTypes, type)) {
+                if (!StringUtils.matchesAnyPattern(excludedZoneTypes, type)
+                        && !thermalZone.isExcluded()) {
                     atLeastOneNotExcluded = true;
                 }
             }
@@ -215,23 +228,33 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
     @Override
     public void onDialogClosed(boolean positiveResult) {
+        // TODO: Stop monitoring thread
 
+        if (monitor != null) {
+            monitor.deinit();
+        }
     }
 
     private class ThermalMonitorController implements MonitorController {
-        Map<ThermalZoneMonitorItem, ThermalZonePickerListItem> listItemByMonitorItem = new LinkedHashMap<>();
+        private int numIterations = 0;
+        private Map<ThermalZoneMonitorItem, ThermalZonePickerListItem> listItemByMonitorItem
+                = new LinkedHashMap<>();
 
         @Override
         public void addItem(MonitorItem item) {
-            ThermalZonePickerListItem listItem = new ThermalZonePickerListItem((ThermalZoneMonitorItem) item);
+            ThermalZonePickerListItem listItem =
+                    new ThermalZonePickerListItem((ThermalZoneMonitorItem) item);
             listItemByMonitorItem.put((ThermalZoneMonitorItem) item, listItem);
         }
 
         @Override
         public void updateItem(MonitorItem item) {
-            ThermalZonePickerListItem listItem = Objects.requireNonNull(listItemByMonitorItem.get((ThermalZoneMonitorItem) item));
+            ThermalZonePickerListItem listItem = Objects.requireNonNull(
+                    listItemByMonitorItem.get((ThermalZoneMonitorItem) item));
             listItem.setCurrentTemperature(item.getValue());
-            if (todoLock) {
+
+            // We should only notify the adapter after it has received the elements
+            if (listAdapter.getItemCount() > 0) {
                 listAdapter.updateListItem(listItem);
             }
         }
@@ -243,7 +266,14 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
         @Override
         public void awaitNotPaused() {
-            // Not needed
+            // No actual waiting needed, since this controller does not pause
+
+            // We count and check the number of iterations to finish initialization later
+            if (numIterations == 1) {
+                // We now have temperature values for every thermal zone and can display the list
+                initAfterWarmup();
+            }
+            numIterations++;
         }
 
         private Collection<ThermalZonePickerListItem> getThermalZones() {
