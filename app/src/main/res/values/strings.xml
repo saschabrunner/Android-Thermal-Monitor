@@ -46,4 +46,7 @@
     <string name="recommended">Recommended</string>
     <string name="other">Other</string>
     <string name="excluded">Excluded</string>
+    <string name="monitorExitedWithException">Monitor exited with exception (check compatibility)</string>
+    <string name="thermalMonitorNotSupportedWithCurrentConfiguration">Thermal monitor not supported with current configuration</string>
+    <string name="cpuFrequencyMonitorNotSupportedWithCurrentConfiguration">CPU frequency monitor not supported with current configuration</string>
 </resources>

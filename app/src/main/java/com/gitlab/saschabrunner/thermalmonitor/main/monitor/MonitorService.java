@@ -40,6 +40,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.core.app.NotificationCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -168,7 +169,7 @@ public class MonitorService extends Service implements MonitorController {
             }
         } catch (MonitorException e) {
             Log.e(TAG, "Monitor could not be initialized", e);
-            stopWithMessage("Monitor exited with exception (check compatibility)");
+            stopWithMessage(R.string.monitorExitedWithException);
         }
 
         for (Thread monitoringThread : monitoringThreads) {
@@ -184,7 +185,7 @@ public class MonitorService extends Service implements MonitorController {
                 thermalMonitor = new ThermalMonitor(RootIPCSingleton.getInstance(this));
             } catch (RootAccessException e) {
                 Log.e(TAG, "Service could not acquire root access", e);
-                stopWithMessage("Service could not acquire root access");
+                stopWithMessage(R.string.couldNotAcquireRootAccess);
                 return;
             }
 
@@ -200,7 +201,7 @@ public class MonitorService extends Service implements MonitorController {
             monitors.add(thermalMonitor);
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         } else {
-            stopWithMessage("Thermal monitor not supported with current configuration");
+            stopWithMessage(R.string.thermalMonitorNotSupportedWithCurrentConfiguration);
         }
     }
 
@@ -213,11 +214,11 @@ public class MonitorService extends Service implements MonitorController {
             monitors.add(cpuFreqMonitor);
             monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
         } else {
-            stopWithMessage("CPU frequency monitor not supported with current configuration");
+            stopWithMessage(R.string.cpuFrequencyMonitorNotSupportedWithCurrentConfiguration);
         }
     }
 
-    private void stopWithMessage(String message) {
+    private void stopWithMessage(@StringRes int message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         stopSelf();
     }

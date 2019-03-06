@@ -1,5 +1,6 @@
 package com.gitlab.saschabrunner.thermalmonitor.thermal;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -16,11 +17,13 @@ import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorItem;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
 import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
+import com.gitlab.saschabrunner.thermalmonitor.util.MessageUtils;
 import com.gitlab.saschabrunner.thermalmonitor.util.StringUtils;
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -71,7 +74,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
         createThermalMonitor();
         new ThermalMonitorInitializer(monitor, monitoringThread, controller,
-                Utils.getGlobalPreferences(getContext())).execute();
+                Utils.getGlobalPreferences(getContext()), getContext()).execute();
     }
 
     private void initializeRecyclerView(View view) {
@@ -91,8 +94,8 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
                         RootIPCSingleton.getInstance(getContext()));
             } catch (RootAccessException e) {
                 Log.e(TAG, "Could not acquire root access", e);
-//                pref.setDialogMessage(R.string.couldNotAcquireRootAccess);
-                // TODO: Error handling
+                MessageUtils.showInfoDialog(getContext(), R.string.rootAccessDenied,
+                        R.string.couldNotAcquireRootAccess);
                 return;
             }
         } else {
@@ -346,8 +349,6 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
                 @NonNull RecyclerView parent,
                 @NonNull RecyclerView.State state) {
             // Make space if this view is the first item of a new group
-            String titleForPosition = titleByRecyclerViewPosition.get(
-                    parent.getChildAdapterPosition(view));
             if (titleByRecyclerViewPosition
                     .containsKey(parent.getChildAdapterPosition(view))) {
                 outRect.set(0, groupSpacing, 0, 0);
@@ -360,32 +361,35 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
         private Thread monitoringThread;
         private ThermalMonitorController controller;
         private SharedPreferences preferences;
+        private WeakReference<Context> context;
 
         private ThermalMonitorInitializer(
                 ThermalMonitor monitor,
                 Thread monitoringThread,
                 ThermalMonitorController controller,
-                SharedPreferences preferences) {
+                SharedPreferences preferences,
+                Context context) {
             this.monitor = monitor;
             this.monitoringThread = monitoringThread;
             this.controller = controller;
             this.preferences = preferences;
+            this.context = new WeakReference<>(context);
         }
 
         @Override
         protected Void doInBackground(Void... voids) {
-            initializeThermalMonitor();
-            monitoringThread.start();
-            return null;
-        }
-
-        private void initializeThermalMonitor() {
             try {
                 monitor.init(controller, ThermalMonitor.Preferences
                         .getPreferencesAllThermalZones(preferences));
             } catch (MonitorException e) {
-                // TODO: Error handling
+                MessageUtils.showInfoDialog(context.get(), R.string.thermalMonitoringDisabled,
+                        R.string.monitorExitedWithException);
+                Log.e(TAG, "Monitor exited with exception", e);
+                return null;
             }
+
+            monitoringThread.start();
+            return null;
         }
     }
 }
