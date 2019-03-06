@@ -249,6 +249,15 @@ public class MonitorService extends Service implements MonitorController {
             mutex.unlock();
         }
 
+        try {
+            for (Thread monitoringThread : monitoringThreads) {
+                monitoringThread.join();
+            }
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Received unexpected interrupt", e);
+            return;
+        }
+
         for (Monitor monitor : monitors) {
             monitor.deinit();
         }
