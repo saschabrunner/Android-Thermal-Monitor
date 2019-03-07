@@ -79,12 +79,12 @@ public class ThermalZonePickerListAdapter
     public static class ViewHolder extends RecyclerView.ViewHolder {
         private DialogThermalZonePickerListItemBinding binding;
 
-        public ViewHolder(@NonNull DialogThermalZonePickerListItemBinding binding) {
+        private ViewHolder(@NonNull DialogThermalZonePickerListItemBinding binding) {
             super(binding.getRoot());
             this.binding = binding;
         }
 
-        public void rebind(ThermalZonePickerListItem data) {
+        private void rebind(ThermalZonePickerListItem data) {
             binding.setData(data);
             binding.executePendingBindings();
         }

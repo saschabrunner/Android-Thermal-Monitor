@@ -23,7 +23,7 @@
     <string name="timedOutWaitingForServiceToStart">Timed out waiting for service to start.</string>
     <string name="rootAccessDenied">Root access denied</string>
     <string name="couldNotAcquireRootAccess">Could not acquire root access.</string>
-    <string name="thermalMonitoringDisabled">Thermal Monitoring disabled</string>
+    <string name="thermalMonitoringNotAvailable">Thermal Monitoring not available</string>
     <string name="sysClassThermalDoesNotExist">/sys/class/thermal does not exist.</string>
     <string name="noValidThermalZonesAreEnabled">No valid thermal zones are enabled.</string>
     <string name="couldNotReadThermalZones">Couldn\'t read thermal zones.</string>
@@ -32,7 +32,7 @@
     <string name="noRootIpcObjectPassedToMonitor">No root IPC object passed to monitor (root globally disabled?).</string>
     <string name="unknownError">Unknown error.</string>
     <string name="monitorConfigurationInvalid">Monitor configuration invalid</string>
-    <string name="cpuFrequencyMonitoringDisabled">CPU frequency monitoring disabled</string>
+    <string name="cpuFrequencyMonitoringNotAvailable">CPU frequency monitoring not available</string>
     <string name="sysDevicesSystemCpuDoesNotExist">/sys/devices/system/cpu does not exist.</string>
     <string name="canNotFindAnyCpusInSysDevicesSystemCpu">Can\'t find any CPUs in /sys/devices/system/cpu.</string>
     <string name="canNotReadFrequencyOfACpu">Can\'t read frequency of a CPU.</string>

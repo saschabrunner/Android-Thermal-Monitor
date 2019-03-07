@@ -1,7 +1,7 @@
 package com.gitlab.saschabrunner.thermalmonitor.thermal;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
+import android.app.Dialog;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -80,8 +80,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
         initializeRecyclerView(view);
 
         createThermalMonitor();
-        new ThermalMonitorInitializer(monitor, monitoringThread, controller,
-                Utils.getGlobalPreferences(getContext()), getContext()).execute();
+        new ThermalMonitorInitializer(this).execute();
     }
 
     private void initializeRecyclerView(View view) {
@@ -232,7 +231,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             }
 
             // Check if zone temperature value makes sense (else exclude it)
-            if (Integer.parseInt(thermalZone.getCurrentTemperature()) < MIN_TEMPERATURE) {
+            if (thermalZone.getCurrentTemperature() < MIN_TEMPERATURE) {
                 thermalZone.setExcluded(true);
             }
 
@@ -316,7 +315,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             ThermalZoneMonitorItem tzItem = (ThermalZoneMonitorItem) item;
             ThermalZonePickerListItem listItem = Objects.requireNonNull(
                     listItemByMonitorItem.get(tzItem));
-            listItem.setCurrentTemperature(item.getValue());
+            listItem.setCurrentTemperature(tzItem.getLastTemperature());
 
             // We should only notify the adapter after it has received the elements
             if (listAdapter.getItemCount() > 0) {
@@ -395,23 +394,20 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
     }
 
     private static class ThermalMonitorInitializer extends AsyncTask<Void, Void, Void> {
-        private ThermalMonitor monitor;
-        private Thread monitoringThread;
-        private ThermalMonitorController controller;
-        private SharedPreferences preferences;
-        private WeakReference<Context> context;
+        private final WeakReference<ThermalZonePickerDialogFragment> fragment;
+        private final ThermalMonitor monitor;
+        private final Thread monitoringThread;
+        private final ThermalMonitorController controller;
+        private final SharedPreferences preferences;
 
-        private ThermalMonitorInitializer(
-                ThermalMonitor monitor,
-                Thread monitoringThread,
-                ThermalMonitorController controller,
-                SharedPreferences preferences,
-                Context context) {
-            this.monitor = monitor;
-            this.monitoringThread = monitoringThread;
-            this.controller = controller;
-            this.preferences = preferences;
-            this.context = new WeakReference<>(context);
+        private boolean failed;
+
+        private ThermalMonitorInitializer(ThermalZonePickerDialogFragment fragment) {
+            this.fragment = new WeakReference<>(fragment);
+            this.monitor = fragment.monitor;
+            this.monitoringThread = fragment.monitoringThread;
+            this.controller = fragment.controller;
+            this.preferences = Utils.getGlobalPreferences(fragment.getContext());
         }
 
         @Override
@@ -420,14 +416,28 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
                 monitor.init(controller, ThermalMonitor.Preferences
                         .getPreferencesAllThermalZones(preferences));
             } catch (MonitorException e) {
-                MessageUtils.showInfoDialog(context.get(), R.string.thermalMonitoringDisabled,
-                        R.string.monitorExitedWithException);
                 Log.e(TAG, "Monitor exited with exception", e);
+                failed = true;
                 return null;
             }
 
             monitoringThread.start();
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            ThermalZonePickerDialogFragment fragment = this.fragment.get();
+            if (failed && fragment != null) {
+                Dialog dialog = fragment.getDialog();
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+
+                MessageUtils.showInfoDialog(fragment.getContext(),
+                        R.string.thermalMonitoringNotAvailable,
+                        R.string.monitorExitedWithException);
+            }
         }
     }
 }

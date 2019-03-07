@@ -8,7 +8,6 @@ import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.Monitor;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorController;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
-import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorItem;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorPreferences;
 import com.gitlab.saschabrunner.thermalmonitor.root.IIPC;
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
@@ -200,8 +199,10 @@ public class ThermalMonitor implements Runnable, Monitor {
     }
 
     public void deinit() {
-        for (ThermalZoneBase thermalZone : thermalZones) {
-            thermalZone.deinit();
+        if (thermalZones != null) {
+            for (ThermalZoneBase thermalZone : thermalZones) {
+                thermalZone.deinit();
+            }
         }
     }
 
@@ -214,9 +215,10 @@ public class ThermalMonitor implements Runnable, Monitor {
             updateThermalZones();
 
             for (ThermalZoneBase thermalZone : thermalZones) {
-                MonitorItem item = Objects.requireNonNull(
+                ThermalZoneMonitorItem item = Objects.requireNonNull(
                         monitorItemByThermalZone.get(thermalZone));
-                item.setValue(String.valueOf(thermalZone.getLastTemperature()));
+                item.setLastTemperature(thermalZone.getLastTemperature());
+                item.setValue(temperatureToUiValue(thermalZone.getLastTemperature()));
                 controller.updateItem(item);
             }
 
@@ -230,6 +232,18 @@ public class ThermalMonitor implements Runnable, Monitor {
                 }
             }
         }
+    }
+
+    /**
+     * Creates a string of the temperature, converting the value to the correct scale (celsius
+     * or fahrenheit) and adds that scale indicator.
+     *
+     * @param temperature Temperature in degree celsius.
+     * @return String representing the temperature in the set scale with the scale indicator added.
+     */
+    private String temperatureToUiValue(int temperature) {
+        // TODO: Fahrenheit
+        return temperature + "°C";
     }
 
     private void updateThermalZones() {

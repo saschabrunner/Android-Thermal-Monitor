@@ -179,51 +179,51 @@ public class MainActivity extends AppCompatActivity
             case ThermalMonitor.FAILURE_REASON_OK:
                 break;
             case ThermalMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.sysClassThermalDoesNotExist);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_NO_ENABLED_THERMAL_ZONES:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.noValidThermalZonesAreEnabled);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_THERMAL_ZONES_NOT_READABLE:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.couldNotReadThermalZones);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_TYPE_NO_PERMISSION:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.canNotReadTypeOfAThermalZone);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_TEMP_NO_PERMISSION:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.canNotReadTemperatureOfAThermalZone);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_NO_ROOT_IPC:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.noRootIpcObjectPassedToMonitor);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_TEMP_NOT_READABLE:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.canNotReadTemperatureOfAThermalZone);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_TYPE_NOT_READABLE:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.canNotReadTypeOfAThermalZone);
                 success = false;
                 break;
             case ThermalMonitor.FAILURE_REASON_ILLEGAL_CONFIGURATION:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.monitorConfigurationInvalid);
                 break;
             default:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
                         R.string.unknownError);
                 success = false;
                 break;
@@ -243,26 +243,26 @@ public class MainActivity extends AppCompatActivity
             case CPUFreqMonitor.FAILURE_REASON_OK:
                 break;
             case CPUFreqMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
                         R.string.sysDevicesSystemCpuDoesNotExist);
                 success = false;
                 break;
             case CPUFreqMonitor.FAILURE_REASON_DIR_EMPTY:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
                         R.string.canNotFindAnyCpusInSysDevicesSystemCpu);
                 success = false;
                 break;
             case CPUFreqMonitor.FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
                         R.string.canNotReadFrequencyOfACpu);
                 success = false;
                 break;
             case CPUFreqMonitor.FAILURE_REASON_ILLEGAL_CONFIGURATION:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
                         R.string.monitorConfigurationInvalid);
                 break;
             default:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringDisabled,
+                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
                         R.string.unknownError);
                 success = false;
                 break;

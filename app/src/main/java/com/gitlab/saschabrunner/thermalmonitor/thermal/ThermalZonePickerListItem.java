@@ -6,17 +6,17 @@ public class ThermalZonePickerListItem {
     private int recyclerViewId;
 
     private ThermalZoneInfo thermalZoneInfo;
-    private String currentTemperature;
+    private int currentTemperature;
 
     private boolean selected;
     private boolean recommended;
     private boolean excluded;
 
     public ThermalZonePickerListItem(ThermalZoneMonitorItem item) {
-        this(item.getThermalZoneInfo(), item.getValue());
+        this(item.getThermalZoneInfo(), item.getLastTemperature());
     }
 
-    public ThermalZonePickerListItem(ThermalZoneInfo thermalZoneInfo, String currentTemperature) {
+    public ThermalZonePickerListItem(ThermalZoneInfo thermalZoneInfo, int currentTemperature) {
         this.recyclerViewId = NO_ID;
         this.thermalZoneInfo = thermalZoneInfo;
         this.currentTemperature = currentTemperature;
@@ -38,11 +38,11 @@ public class ThermalZonePickerListItem {
         this.thermalZoneInfo = thermalZoneInfo;
     }
 
-    public String getCurrentTemperature() {
+    public int getCurrentTemperature() {
         return currentTemperature;
     }
 
-    public void setCurrentTemperature(String currentTemperature) {
+    public void setCurrentTemperature(int currentTemperature) {
         this.currentTemperature = currentTemperature;
     }
 
