@@ -29,11 +29,13 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
@@ -112,6 +114,18 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
     @Override
     public void onDialogClosed(boolean positiveResult) {
+        if (positiveResult) {
+            Set<String> selectedZoneIds = new HashSet<>();
+            for (ThermalZonePickerListItem thermalZone : controller.getThermalZones()) {
+                if (thermalZone.isSelected()) {
+                    selectedZoneIds.add(String.valueOf(thermalZone.getThermalZoneInfo().getId()));
+                }
+            }
+
+            ThermalZonePickerPreference preference = (ThermalZonePickerPreference) getPreference();
+            preference.setValues(selectedZoneIds);
+        }
+
         if (monitor != null) {
             deinitMonitoring();
         }
@@ -141,6 +155,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
      * Called in separate thread!
      */
     private void initAfterWarmup() {
+        applySelection();
         Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName
                 = groupThermalZones(controller.getThermalZones());
         listAdapter.setListContents(thermalZoneGroupByName);
@@ -149,6 +164,17 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
                     new GroupTitleItemDecoration(calculateTitlePositions(thermalZoneGroupByName)));
             progressBar.setVisibility(View.GONE);
         });
+    }
+
+    private void applySelection() {
+        ThermalZonePickerPreference preference = (ThermalZonePickerPreference) getPreference();
+        Set<String> selectedThermalZoneIds = preference.getValues();
+        for (ThermalZonePickerListItem thermalZone : controller.getThermalZones()) {
+            if (selectedThermalZoneIds.contains(
+                    String.valueOf(thermalZone.getThermalZoneInfo().getId()))) {
+                thermalZone.setSelected(true);
+            }
+        }
     }
 
     private Map<Integer, String> calculateTitlePositions(

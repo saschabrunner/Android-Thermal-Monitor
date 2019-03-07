@@ -6,8 +6,8 @@ import android.util.AttributeSet;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import androidx.annotation.Nullable;
@@ -15,7 +15,6 @@ import androidx.preference.DialogPreference;
 
 public class ThermalZonePickerPreference extends DialogPreference {
     private Set<String> values = new HashSet<>();
-    private List<ThermalZoneInfo> thermalZones;
 
     public ThermalZonePickerPreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
@@ -33,7 +32,21 @@ public class ThermalZonePickerPreference extends DialogPreference {
         this(context, null);
     }
 
-    private void setValues(Set<String> values) {
+    /**
+     * Get the current value of the preference.
+     *
+     * @return Selected zone IDs as strings.
+     */
+    public Set<String> getValues() {
+        return Collections.unmodifiableSet(values);
+    }
+
+    /**
+     * Set a new value for the preference.
+     *
+     * @param values Selected zone IDs as strings.
+     */
+    public void setValues(Set<String> values) {
         this.values.clear();
         this.values.addAll(values);
 

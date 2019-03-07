@@ -8,6 +8,7 @@ public class ThermalZonePickerListItem {
     private ThermalZoneInfo thermalZoneInfo;
     private String currentTemperature;
 
+    private boolean selected;
     private boolean recommended;
     private boolean excluded;
 
@@ -43,6 +44,14 @@ public class ThermalZonePickerListItem {
 
     public void setCurrentTemperature(String currentTemperature) {
         this.currentTemperature = currentTemperature;
+    }
+
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
     public boolean isRecommended() {
