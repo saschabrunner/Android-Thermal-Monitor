@@ -1,19 +1,10 @@
 package com.gitlab.saschabrunner.thermalmonitor.main.ui;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
-import com.gitlab.saschabrunner.thermalmonitor.cpufreq.CPUFreqMonitor;
-import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
-import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorException;
-import com.gitlab.saschabrunner.thermalmonitor.root.RootAccessException;
-import com.gitlab.saschabrunner.thermalmonitor.root.RootIPCSingleton;
-import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitor;
-import com.gitlab.saschabrunner.thermalmonitor.util.MessageUtils;
-import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.HashMap;
@@ -130,145 +121,6 @@ public class MainActivity extends AppCompatActivity
         // Make sure the fragment is visible
         fragmentTransaction.show(fragment);
         fragmentTransaction.commit();
-    }
-
-    // TODO: Refactor and move somewhere central
-    public boolean checkMonitoringAvailable() {
-        boolean success = true;
-
-        try {
-            if (GlobalPreferences.getInstance().thermalMonitorEnabled()) {
-                success &= checkThermalMonitoringAvailable();
-            }
-
-            if (GlobalPreferences.getInstance().cpuFreqMonitorEnabled()) {
-                success &= checkCpuFreqMonitoringAvailable();
-            }
-        } catch (MonitorException e) {
-            MessageUtils.showInfoDialog(this, R.string.monitorConfigurationInvalid,
-                    e.getResourceId());
-            success = false;
-        }
-
-        return success;
-    }
-
-    private boolean checkThermalMonitoringAvailable() throws MonitorException {
-        boolean success = true;
-
-        ThermalMonitor thermalMonitor;
-        if (GlobalPreferences.getInstance().rootEnabled()) {
-            Log.v(TAG, "Root enabled, initializing Thermal Monitor with Root IPC");
-            try {
-                thermalMonitor = new ThermalMonitor(RootIPCSingleton.getInstance(this));
-            } catch (RootAccessException e) {
-                Log.e(TAG, "Root access has been denied", e);
-                MessageUtils.showInfoDialog(this, R.string.rootAccessDenied,
-                        R.string.couldNotAcquireRootAccess);
-                return false;
-            }
-        } else {
-            Log.v(TAG, "Root disabled, initializing Thermal Monitor without Root IPC");
-            thermalMonitor = new ThermalMonitor();
-        }
-
-        int thermalMonitoringAvailable =
-                thermalMonitor.checkSupported(ThermalMonitor.Preferences
-                        .getPreferences(Utils.getGlobalPreferences(this)));
-        switch (thermalMonitoringAvailable) {
-            case ThermalMonitor.FAILURE_REASON_OK:
-                break;
-            case ThermalMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.sysClassThermalDoesNotExist);
-                success = false;
-                break;
-            case ThermalMonitor.FAILURE_REASON_NO_ENABLED_THERMAL_ZONES:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.noValidThermalZonesAreEnabled);
-                success = false;
-                break;
-            case ThermalMonitor.FAILURE_REASON_THERMAL_ZONES_NOT_READABLE:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.couldNotReadThermalZones);
-                success = false;
-                break;
-            case ThermalMonitor.FAILURE_REASON_TYPE_NO_PERMISSION:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.canNotReadTypeOfAThermalZone);
-                success = false;
-                break;
-            case ThermalMonitor.FAILURE_REASON_TEMP_NO_PERMISSION:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.canNotReadTemperatureOfAThermalZone);
-                success = false;
-                break;
-            case ThermalMonitor.FAILURE_REASON_NO_ROOT_IPC:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.noRootIpcObjectPassedToMonitor);
-                success = false;
-                break;
-            case ThermalMonitor.FAILURE_REASON_TEMP_NOT_READABLE:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.canNotReadTemperatureOfAThermalZone);
-                success = false;
-                break;
-            case ThermalMonitor.FAILURE_REASON_TYPE_NOT_READABLE:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.canNotReadTypeOfAThermalZone);
-                success = false;
-                break;
-            case ThermalMonitor.FAILURE_REASON_ILLEGAL_CONFIGURATION:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.monitorConfigurationInvalid);
-                break;
-            default:
-                MessageUtils.showInfoDialog(this, R.string.thermalMonitoringNotAvailable,
-                        R.string.unknownError);
-                success = false;
-                break;
-        }
-
-        return success;
-    }
-
-    private boolean checkCpuFreqMonitoringAvailable() throws MonitorException {
-        boolean success = true;
-
-        CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
-        int cpuFreqMonitoringAvailable =
-                cpuFreqMonitor.checkSupported(CPUFreqMonitor.Preferences
-                        .getPreferences(Utils.getGlobalPreferences(this)));
-        switch (cpuFreqMonitoringAvailable) {
-            case CPUFreqMonitor.FAILURE_REASON_OK:
-                break;
-            case CPUFreqMonitor.FAILURE_REASON_DIR_NOT_EXISTS:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
-                        R.string.sysDevicesSystemCpuDoesNotExist);
-                success = false;
-                break;
-            case CPUFreqMonitor.FAILURE_REASON_DIR_EMPTY:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
-                        R.string.canNotFindAnyCpusInSysDevicesSystemCpu);
-                success = false;
-                break;
-            case CPUFreqMonitor.FAILURE_REASON_CUR_FREQUENCY_NO_PERMISSION:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
-                        R.string.canNotReadFrequencyOfACpu);
-                success = false;
-                break;
-            case CPUFreqMonitor.FAILURE_REASON_ILLEGAL_CONFIGURATION:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
-                        R.string.monitorConfigurationInvalid);
-                break;
-            default:
-                MessageUtils.showInfoDialog(this, R.string.cpuFrequencyMonitoringNotAvailable,
-                        R.string.unknownError);
-                success = false;
-                break;
-        }
-
-        return success;
     }
 
     public void toggleService(View view) {

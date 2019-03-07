@@ -6,7 +6,7 @@ public interface Monitor {
      * @param preferences
      * @return 0 to indicate support, non zero value to indicate no support
      */
-    int checkSupported(MonitorPreferences preferences) throws MonitorException;
+    int checkSupported(MonitorPreferences preferences);
 
     /**
      *

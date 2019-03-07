@@ -53,7 +53,7 @@ public class CPUFreqMonitor implements Runnable, Monitor {
 
     @Override
     @FAILURE_REASON
-    public int checkSupported(MonitorPreferences preferences) throws MonitorException {
+    public int checkSupported(MonitorPreferences preferences) {
         // Validate preferences
         if (!(preferences instanceof Preferences)) {
             return FAILURE_REASON_ILLEGAL_CONFIGURATION;

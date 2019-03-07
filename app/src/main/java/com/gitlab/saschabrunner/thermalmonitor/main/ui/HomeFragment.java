@@ -13,7 +13,9 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.gitlab.saschabrunner.thermalmonitor.cpufreq.CPUFreqMonitorValidator;
 import com.gitlab.saschabrunner.thermalmonitor.main.monitor.MonitorService;
+import com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalMonitorValidator;
 import com.gitlab.saschabrunner.thermalmonitor.util.MessageUtils;
 
 import java.util.Objects;
@@ -67,7 +69,7 @@ public class HomeFragment extends Fragment {
 
     private boolean startService() {
         // Check compatibility
-        if (!((MainActivity) getActivity()).checkMonitoringAvailable()) {
+        if (!validateMonitoringAvailable()) {
             return false;
         }
 
@@ -80,6 +82,11 @@ public class HomeFragment extends Fragment {
         }
 
         return true;
+    }
+
+    private boolean validateMonitoringAvailable() {
+        return ThermalMonitorValidator.checkMonitoringAvailable(getContext())
+                && CPUFreqMonitorValidator.checkMonitoringAvailable(getContext());
     }
 
     private void stopService() {
