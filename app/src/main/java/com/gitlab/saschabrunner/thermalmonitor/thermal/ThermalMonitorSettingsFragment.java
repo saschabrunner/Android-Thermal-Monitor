@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
+import com.gitlab.saschabrunner.thermalmonitor.util.MessageUtils;
 import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
 
 import java.util.Objects;
@@ -24,12 +25,23 @@ public class ThermalMonitorSettingsFragment extends PreferenceFragmentCompat {
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.fragment_settings_thermal_monitor, rootKey);
 
+        findPreference("dummyValidatePreferences")
+                .setOnPreferenceClickListener(this::checkMonitoringAvailable);
+
         // Disable root preference if root access is disabled
         if (!GlobalPreferences.getInstance().rootEnabled()) {
             Preference useRoot = findPreference(PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT);
             useRoot.setEnabled(false);
             useRoot.setSummary(R.string.enableRootGloballyFirstToUseThisFeature);
         }
+    }
+
+    private boolean checkMonitoringAvailable(Preference preference) {
+        if (ThermalMonitorValidator.checkMonitoringAvailable(getContext())) {
+            MessageUtils.showInfoDialog(getContext(), R.string.success,
+                    R.string.theModuleSeemsToBeWorkingCorrectlyOnThisDeviceUsingTheCurrentSettings);
+        }
+        return true;
     }
 
     @Override

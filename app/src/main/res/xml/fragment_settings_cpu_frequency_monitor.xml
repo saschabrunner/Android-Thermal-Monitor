@@ -3,6 +3,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory app:title="CPU Frequency Monitor">
+        <Preference
+            app:key="dummyValidatePreferences"
+            app:title="Check compatibility"
+            app:summary="Check the compatibility of this module with the current settings." />
+
         <CheckBoxPreference
             app:defaultValue="true"
             app:key="cpuFreqMonitorEnabled"
@@ -14,7 +19,8 @@
             app:key="cpuFreqMonitorRefreshInterval"
             app:min="500"
             app:stepWidth="100"
-            app:title="Refresh interval (in ms)" />
+            app:summary="Choose the refresh interval to use in milliseconds."
+            app:title="Refresh interval" />
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>

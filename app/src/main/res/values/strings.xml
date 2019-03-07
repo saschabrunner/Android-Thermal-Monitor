@@ -36,7 +36,7 @@
     <string name="sysDevicesSystemCpuDoesNotExist">/sys/devices/system/cpu does not exist.</string>
     <string name="canNotFindAnyCpusInSysDevicesSystemCpu">Can\'t find any CPUs in /sys/devices/system/cpu.</string>
     <string name="canNotReadFrequencyOfACpu">Can\'t read frequency of a CPU.</string>
-    <string name="enableRootGloballyFirstToUseThisFeature">Enable root globally first to use this feature</string>
+    <string name="enableRootGloballyFirstToUseThisFeature">Enable root globally first to use this feature.</string>
     <string name="noThermalZonesFound">No thermal zones found</string>
     <string name="couldNotFindAnyThermalZones">Could not find any thermal zones</string>
     <string name="topLeft">Top Left</string>
@@ -53,4 +53,6 @@
     <string name="current_value">Current value</string>
     <string name="celsius">Celsius</string>
     <string name="fahrenheit">Fahrenheit</string>
+    <string name="theModuleSeemsToBeWorkingCorrectlyOnThisDeviceUsingTheCurrentSettings">The module seems to be working correctly on this device using the current settings.</string>
+    <string name="success">Success</string>
 </resources>

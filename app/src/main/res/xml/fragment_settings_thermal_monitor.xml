@@ -3,6 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="Thermal Monitor">
+        <Preference
+            app:key="dummyValidatePreferences"
+            app:summary="Check the compatibility of this module with the current settings."
+            app:title="Check compatibility" />
+
         <CheckBoxPreference
             app:defaultValue="false"
             app:key="thermalMonitorEnabled"
@@ -18,13 +23,15 @@
             app:entries="@array/thermalMonitorScaleEntries"
             app:entryValues="@array/thermalMonitorScaleValues"
             app:key="thermalMonitorScale"
+            app:summary="Choose the temperature scale to use."
             app:title="Temperature scale" />
 
         <com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalZonePickerPreference
             app:entries="@array/emptyStringArray"
             app:entryValues="@array/emptyStringArray"
             app:key="thermalMonitorThermalZones"
-            app:title="Select thermal zones to monitor" />
+            app:summary="Select the thermal zones to monitor."
+            app:title="Thermal zones" />
 
         <com.gitlab.saschabrunner.thermalmonitor.main.ui.CustomSeekBarPreference
             android:max="9990"
@@ -32,7 +39,8 @@
             app:key="thermalMonitorRefreshInterval"
             app:min="500"
             app:stepWidth="100"
-            app:title="Refresh interval (in ms)" />
+            app:summary="Choose the refresh interval to use in milliseconds."
+            app:title="Refresh interval" />
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>
