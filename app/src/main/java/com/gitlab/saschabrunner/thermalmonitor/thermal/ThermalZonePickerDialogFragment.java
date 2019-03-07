@@ -1,5 +1,6 @@
 package com.gitlab.saschabrunner.thermalmonitor.thermal;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
@@ -145,6 +146,9 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
     private Map<Integer, String> calculateTitlePositions(
             Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName) {
+        // HashMap has better performance than SparseArray here because we will do many
+        // lookups for non existing items.
+        @SuppressLint("UseSparseArrays")
         Map<Integer, String> titleByRecyclerViewPosition = new HashMap<>();
 
         int currentPosition = 0;
@@ -276,8 +280,9 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
         @Override
         public void updateItem(MonitorItem item) {
+            ThermalZoneMonitorItem tzItem = (ThermalZoneMonitorItem) item;
             ThermalZonePickerListItem listItem = Objects.requireNonNull(
-                    listItemByMonitorItem.get((ThermalZoneMonitorItem) item));
+                    listItemByMonitorItem.get(tzItem));
             listItem.setCurrentTemperature(item.getValue());
 
             // We should only notify the adapter after it has received the elements
@@ -336,8 +341,8 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
                 int position = parent.getChildAdapterPosition(view);
                 String titleForPosition = titleByRecyclerViewPosition.get(position);
                 if (titleForPosition != null) {
-                    c.drawText(titleForPosition, view.getLeft(),
-                            view.getTop() - groupSpacing / 2 + textSize / 3, paint);
+                    int a = view.getTop() - groupSpacing / 2 + textSize / 3;
+                    c.drawText(titleForPosition, view.getLeft(), a, paint);
                 }
             }
         }
