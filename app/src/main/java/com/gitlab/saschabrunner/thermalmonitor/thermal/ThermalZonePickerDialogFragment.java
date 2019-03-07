@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ProgressBar;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
@@ -47,8 +48,10 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
     private static final String TAG = "ThermalZonePickerDialog";
     private static final int MIN_TEMPERATURE = 1;
 
-    private ThermalZonePickerListAdapter listAdapter;
     private RecyclerView recyclerView;
+    private ProgressBar progressBar;
+
+    private ThermalZonePickerListAdapter listAdapter;
     private ThermalMonitor monitor;
     private ThermalMonitorController controller;
     private Thread monitoringThread;
@@ -71,6 +74,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
 
         controller = new ThermalMonitorController();
         listAdapter = new ThermalZonePickerListAdapter();
+        progressBar = view.findViewById(R.id.dialogThermalZonePickerProgressBar);
         initializeRecyclerView(view);
 
         createThermalMonitor();
@@ -140,8 +144,11 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
         Multimap<String, ThermalZonePickerListItem> thermalZoneGroupByName
                 = groupThermalZones(controller.getThermalZones());
         listAdapter.setListContents(thermalZoneGroupByName);
-        recyclerView.post(() -> recyclerView.addItemDecoration(
-                new GroupTitleItemDecoration(calculateTitlePositions(thermalZoneGroupByName))));
+        recyclerView.post(() -> {
+            recyclerView.addItemDecoration(
+                    new GroupTitleItemDecoration(calculateTitlePositions(thermalZoneGroupByName)));
+            progressBar.setVisibility(View.GONE);
+        });
     }
 
     private Map<Integer, String> calculateTitlePositions(
