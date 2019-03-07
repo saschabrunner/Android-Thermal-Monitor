@@ -231,7 +231,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             }
 
             // Check if zone temperature value makes sense (else exclude it)
-            if (thermalZone.getCurrentTemperature() < MIN_TEMPERATURE) {
+            if (thermalZone.getCurrentTemperatureCelsius() < MIN_TEMPERATURE) {
                 thermalZone.setExcluded(true);
             }
 
@@ -315,7 +315,8 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             ThermalZoneMonitorItem tzItem = (ThermalZoneMonitorItem) item;
             ThermalZonePickerListItem listItem = Objects.requireNonNull(
                     listItemByMonitorItem.get(tzItem));
-            listItem.setCurrentTemperature(tzItem.getLastTemperature());
+            listItem.setCurrentTemperatureCelsius(tzItem.getLastTemperature());
+            listItem.setCurrentTemperatureUiValue(item.getValue());
 
             // We should only notify the adapter after it has received the elements
             if (listAdapter.getItemCount() > 0) {

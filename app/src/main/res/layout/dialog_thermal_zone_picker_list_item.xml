@@ -60,7 +60,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
-                android:text="@{data.currentTemperature}"
+                android:text="@{data.currentTemperatureUiValue}"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
                 app:layout_constraintStart_toEndOf="@+id/dialogThermalZonePickerTemperatureLabel"
                 app:layout_constraintTop_toTopOf="@+id/dialogThermalZonePickerTemperatureLabel" />

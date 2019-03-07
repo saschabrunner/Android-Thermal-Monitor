@@ -13,6 +13,13 @@
             app:key="thermalMonitorUseRoot"
             app:title="Use root to access thermal zones" />
 
+        <ListPreference
+            app:defaultValue="0"
+            app:entries="@array/thermalMonitorScaleEntries"
+            app:entryValues="@array/thermalMonitorScaleValues"
+            app:key="thermalMonitorScale"
+            app:title="Temperature scale" />
+
         <com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalZonePickerPreference
             app:entries="@array/emptyStringArray"
             app:entryValues="@array/emptyStringArray"

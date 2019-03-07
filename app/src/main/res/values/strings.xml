@@ -51,4 +51,6 @@
     <string name="cpuFrequencyMonitorNotSupportedWithCurrentConfiguration">CPU frequency monitor not supported with current configuration</string>
     <string name="id">ID</string>
     <string name="current_value">Current value</string>
+    <string name="celsius">Celsius</string>
+    <string name="fahrenheit">Fahrenheit</string>
 </resources>

@@ -23,4 +23,12 @@
     <string-array name="thermalMonitorExcludedZones">
         <item>none_yet</item>
     </string-array>
+    <string-array name="thermalMonitorScaleEntries">
+        <item>@string/celsius</item>
+        <item>@string/fahrenheit</item>
+    </string-array>
+    <string-array name="thermalMonitorScaleValues">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
 </resources>

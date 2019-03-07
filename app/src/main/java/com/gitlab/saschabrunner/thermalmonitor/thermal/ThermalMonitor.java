@@ -55,6 +55,15 @@ public class ThermalMonitor implements Runnable, Monitor {
     public static final int FAILURE_REASON_THERMAL_ZONES_NOT_READABLE = 8;
     public static final int FAILURE_REASON_ILLEGAL_CONFIGURATION = 9;
 
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({SCALE_CELSIUS, SCALE_FAHRENHEIT})
+    public @interface TEMPERATURE_SCALE {
+
+    }
+
+    public static final int SCALE_CELSIUS = 0;
+    public static final int SCALE_FAHRENHEIT = 1;
+
     private final IIPC rootIpc;
 
     private Preferences preferences;
@@ -242,8 +251,18 @@ public class ThermalMonitor implements Runnable, Monitor {
      * @return String representing the temperature in the set scale with the scale indicator added.
      */
     private String temperatureToUiValue(int temperature) {
-        // TODO: Fahrenheit
-        return temperature + "°C";
+        if (preferences.scale == SCALE_CELSIUS) {
+            return temperature + "°C";
+        } else if (preferences.scale == SCALE_FAHRENHEIT) {
+            return toFahrenheit(temperature) + "°F";
+        }
+
+        Log.e(TAG, "Unexpected temperature scale '" + preferences.scale + "'");
+        return null;
+    }
+
+    private int toFahrenheit(int temperatureCelsius) {
+        return 32 + 9 * temperatureCelsius / 5;
     }
 
     private void updateThermalZones() {
@@ -355,6 +374,7 @@ public class ThermalMonitor implements Runnable, Monitor {
 
     public static class Preferences extends MonitorPreferences {
         private final boolean useRoot;
+        private final int scale;
         private final int interval;
         private final boolean enableAllThermalZones; // If true, overrides thermalZoneIds setting
         private final Set<Integer> thermalZoneIds;
@@ -364,6 +384,10 @@ public class ThermalMonitor implements Runnable, Monitor {
             this.useRoot = preferences.getBoolean(
                     PreferenceConstants.KEY_THERMAL_MONITOR_USE_ROOT,
                     PreferenceConstants.DEF_THERMAL_MONITOR_USE_ROOT);
+
+            this.scale = Integer.parseInt(Objects.requireNonNull(preferences.getString(
+                    PreferenceConstants.KEY_THERMAL_MONITOR_SCALE,
+                    PreferenceConstants.DEF_THERMAL_MONITOR_SCALE)));
 
             this.interval = preferences.getInt(
                     PreferenceConstants.KEY_THERMAL_MONITOR_REFRESH_INTERVAL,

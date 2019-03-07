@@ -6,7 +6,8 @@ public class ThermalZonePickerListItem {
     private int recyclerViewId;
 
     private ThermalZoneInfo thermalZoneInfo;
-    private int currentTemperature;
+    private int currentTemperatureCelsius;
+    private String currentTemperatureUiValue;
 
     private boolean selected;
     private boolean recommended;
@@ -16,10 +17,10 @@ public class ThermalZonePickerListItem {
         this(item.getThermalZoneInfo(), item.getLastTemperature());
     }
 
-    public ThermalZonePickerListItem(ThermalZoneInfo thermalZoneInfo, int currentTemperature) {
+    public ThermalZonePickerListItem(ThermalZoneInfo thermalZoneInfo, int currentTemperatureCelsius) {
         this.recyclerViewId = NO_ID;
         this.thermalZoneInfo = thermalZoneInfo;
-        this.currentTemperature = currentTemperature;
+        this.currentTemperatureCelsius = currentTemperatureCelsius;
     }
 
     public int getRecyclerViewId() {
@@ -38,12 +39,20 @@ public class ThermalZonePickerListItem {
         this.thermalZoneInfo = thermalZoneInfo;
     }
 
-    public int getCurrentTemperature() {
-        return currentTemperature;
+    public int getCurrentTemperatureCelsius() {
+        return currentTemperatureCelsius;
     }
 
-    public void setCurrentTemperature(int currentTemperature) {
-        this.currentTemperature = currentTemperature;
+    public void setCurrentTemperatureCelsius(int currentTemperatureCelsius) {
+        this.currentTemperatureCelsius = currentTemperatureCelsius;
+    }
+
+    public String getCurrentTemperatureUiValue() {
+        return currentTemperatureUiValue;
+    }
+
+    public void setCurrentTemperatureUiValue(String currentTemperatureUiValue) {
+        this.currentTemperatureUiValue = currentTemperatureUiValue;
     }
 
     public boolean isSelected() {
