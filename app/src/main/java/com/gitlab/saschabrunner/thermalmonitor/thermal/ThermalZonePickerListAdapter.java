@@ -2,11 +2,9 @@ package com.gitlab.saschabrunner.thermalmonitor.thermal;
 
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
-import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.gitlab.saschabrunner.thermalmonitor.databinding.DialogThermalZonePickerListItemBinding;
 import com.google.common.collect.Multimap;
 
 import java.util.ArrayList;
@@ -26,18 +24,19 @@ public class ThermalZonePickerListAdapter
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         Log.v(TAG, "onCreateViewHolder called");
 
-        View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.dialog_thermal_zone_picker_list_item, parent, false);
+        DialogThermalZonePickerListItemBinding binding =
+                DialogThermalZonePickerListItemBinding.inflate(
+                        LayoutInflater.from(parent.getContext()),
+                        parent,
+                        false);
 
-        return new ViewHolder(itemView);
+        return new ViewHolder(binding);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ThermalZonePickerListItem listItem = items.get(position);
-        holder.getId().setText(String.valueOf(listItem.getThermalZoneInfo().getId()));
-        holder.getType().setText(listItem.getThermalZoneInfo().getType());
-        holder.getTemperature().setText(listItem.getCurrentTemperature());
+        holder.rebind(listItem);
     }
 
     @Override
@@ -78,28 +77,16 @@ public class ThermalZonePickerListAdapter
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        private final TextView id;
-        private final TextView type;
-        private final TextView temperature;
+        private DialogThermalZonePickerListItemBinding binding;
 
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-
-            this.id = itemView.findViewById(R.id.dialogThermalZonePickerId);
-            this.type = itemView.findViewById(R.id.dialogThermalZonePickerType);
-            this.temperature = itemView.findViewById(R.id.dialogThermalZonePickerTemperature);
+        public ViewHolder(@NonNull DialogThermalZonePickerListItemBinding binding) {
+            super(binding.getRoot());
+            this.binding = binding;
         }
 
-        public TextView getId() {
-            return id;
-        }
-
-        public TextView getType() {
-            return type;
-        }
-
-        public TextView getTemperature() {
-            return temperature;
+        public void rebind(ThermalZonePickerListItem data) {
+            binding.setData(data);
+            binding.executePendingBindings();
         }
     }
 }

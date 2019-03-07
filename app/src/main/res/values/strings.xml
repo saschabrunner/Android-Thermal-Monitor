@@ -49,4 +49,6 @@
     <string name="monitorExitedWithException">Monitor exited with exception (check compatibility)</string>
     <string name="thermalMonitorNotSupportedWithCurrentConfiguration">Thermal monitor not supported with current configuration</string>
     <string name="cpuFrequencyMonitorNotSupportedWithCurrentConfiguration">CPU frequency monitor not supported with current configuration</string>
+    <string name="id">ID</string>
+    <string name="current_value">Current value</string>
 </resources>
