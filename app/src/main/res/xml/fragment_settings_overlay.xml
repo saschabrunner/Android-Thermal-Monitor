@@ -8,16 +8,19 @@
             app:entries="@array/overlayPositionEntries"
             app:entryValues="@array/overlayPositionValues"
             app:key="overlayTextGravity"
+            app:summary="Choose the position of the overlay to appear in."
             app:title="Overlay position" />
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             app:cpv_showAlphaSlider="true"
             app:defaultValue="@color/overlayBackgroundColorDefault"
             app:key="overlayBackgroundColor"
-            app:title="Background color and opacity" />
+            app:summary="Choose the background color and the transparency of the overlay."
+            app:title="Background color" />
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             app:cpv_showAlphaSlider="true"
             app:defaultValue="@color/overlayTextColorDefault"
             app:key="overlayTextColor"
+            app:summary="Choose the text color to use on the overlay."
             app:title="Text color" />
         <com.gitlab.saschabrunner.thermalmonitor.main.ui.CustomSeekBarPreference
             android:max="50"
@@ -25,6 +28,7 @@
             app:key="overlayTextSize"
             app:min="4"
             app:stepWidth="2"
+            app:summary="Choose the size of the text to use on the overlay."
             app:title="Text size" />
         <CheckBoxPreference
             app:defaultValue="true"
@@ -37,6 +41,7 @@
             app:key="overlayLabelWidth"
             app:min="30"
             app:stepWidth="10"
+            app:summary="Choose the width used for the labels in the overlay."
             app:title="Label width" />
     </PreferenceCategory>
 

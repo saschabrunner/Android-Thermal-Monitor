@@ -9,6 +9,7 @@
         <Preference
             app:isPreferenceVisible="false"
             app:key="dummyOverlaySettings"
+            app:summary="This setting needs to be enabled before the app is allowed to draw the overlay."
             app:title="Open Android overlay permission settings" />
     </PreferenceCategory>
 
