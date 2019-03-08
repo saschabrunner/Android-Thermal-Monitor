@@ -9,6 +9,7 @@ import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.ProgressBar;
 
@@ -352,15 +353,20 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
     }
 
     private class GroupTitleItemDecoration extends RecyclerView.ItemDecoration {
-        private int textSize = 50;
-        private int groupSpacing = 100;
+        private final float textSize;
+        private final float groupSpacing;
 
-        private Paint paint = new Paint();
-        private Map<Integer, String> titleByRecyclerViewPosition;
+        private final Paint paint = new Paint();
+        private final Map<Integer, String> titleByRecyclerViewPosition;
 
         private GroupTitleItemDecoration(Map<Integer, String> titleByRecyclerViewPosition) {
             this.titleByRecyclerViewPosition = titleByRecyclerViewPosition;
+            this.textSize = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP, 24, getResources().getDisplayMetrics());
+            this.groupSpacing = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP, 32, getResources().getDisplayMetrics());
             paint.setTextSize(textSize);
+            paint.setAntiAlias(true);
         }
 
         @Override
@@ -374,7 +380,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
                 int position = parent.getChildAdapterPosition(view);
                 String titleForPosition = titleByRecyclerViewPosition.get(position);
                 if (titleForPosition != null) {
-                    int a = view.getTop() - groupSpacing / 2 + textSize / 3;
+                    int a = (int) (view.getTop() - groupSpacing / 2 + textSize / 3);
                     c.drawText(titleForPosition, view.getLeft(), a, paint);
                 }
             }
@@ -389,7 +395,7 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
             // Make space if this view is the first item of a new group
             if (titleByRecyclerViewPosition
                     .containsKey(parent.getChildAdapterPosition(view))) {
-                outRect.set(0, groupSpacing, 0, 0);
+                outRect.set(0, (int) groupSpacing, 0, 0);
             }
         }
     }
