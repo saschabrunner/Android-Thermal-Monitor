@@ -4,6 +4,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
+import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.databinding.DialogThermalZonePickerListItemBinding;
 import com.google.common.collect.Multimap;
 
@@ -29,6 +30,10 @@ public class ThermalZonePickerListAdapter
                         LayoutInflater.from(parent.getContext()),
                         parent,
                         false);
+
+        // Make the whole card clickable to select
+        binding.getRoot().setOnClickListener(
+                v -> v.findViewById(R.id.dialogThermalZonePickerCheckBox).performClick());
 
         return new ViewHolder(binding);
     }
