@@ -55,4 +55,7 @@
     <string name="fahrenheit">Fahrenheit</string>
     <string name="theModuleSeemsToBeWorkingCorrectlyOnThisDeviceUsingTheCurrentSettings">The module seems to be working correctly on this device using the current settings.</string>
     <string name="success">Success</string>
+    <string name="version">Version</string>
+    <string name="developed_by_sascha_brunner">Developed by Sascha Brunner</string>
+    <string name="contact_killerirus_gmail_com">Contact: killerirus@gmail.com</string>
 </resources>
