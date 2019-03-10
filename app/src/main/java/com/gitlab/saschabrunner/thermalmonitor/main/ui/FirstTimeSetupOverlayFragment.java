@@ -7,8 +7,13 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
+import com.gitlab.saschabrunner.thermalmonitor.util.MessageUtils;
+import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
+
+import java.util.Objects;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 
@@ -26,7 +31,25 @@ public class FirstTimeSetupOverlayFragment extends Fragment implements FirstTime
     }
 
     @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        Objects.requireNonNull(getView()).findViewById(R.id.firstTimeSetupOverlaySettingButton)
+                .setOnClickListener(this::openOverlayPermissionSetting);
+    }
+
+    @Override
     public boolean onNextScreenRequested() {
-        return true;
+        if (Utils.overlayPermissionEnabled(getContext())) {
+            return true;
+        }
+
+        MessageUtils.showInfoDialog(getContext(), R.string.overlay_permission_not_enabled,
+                R.string.overlay_permission_not_enabled_text);
+
+        return false;
+    }
+
+    public void openOverlayPermissionSetting(View v) {
+        Utils.openOverlayPermissionSetting(getContext());
     }
 }

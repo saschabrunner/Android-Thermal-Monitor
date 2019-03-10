@@ -10,7 +10,6 @@ import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -73,14 +72,12 @@ public class MonitorService extends Service implements MonitorController {
         // Set the service to a foreground service
         startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(this)) {
+        if (!Utils.overlayPermissionEnabled(this)) {
                 Toast.makeText(this,
-                        "Overlay permission not enabled, open overlay settings to enable",
+                        getString(R.string.overlay_permission_not_enabled_text),
                         Toast.LENGTH_LONG).show();
                 stopSelf();
                 return;
-            }
         }
 
         initBroadcastReceiver();

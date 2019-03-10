@@ -34,6 +34,10 @@ public class FirstTimeSetupActivity extends AppCompatActivity {
         int currentItem = viewPager.getCurrentItem();
         int totalItems = pagerAdapter.getCount();
 
+        if (!pagerAdapter.getItemCasted(currentItem).onNextScreenRequested()) {
+            return;
+        }
+
         if (currentItem < totalItems - 1) {
             viewPager.setCurrentItem(currentItem + 1);
 

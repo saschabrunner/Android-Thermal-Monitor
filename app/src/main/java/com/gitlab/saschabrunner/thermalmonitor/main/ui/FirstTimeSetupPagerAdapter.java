@@ -28,6 +28,10 @@ public class FirstTimeSetupPagerAdapter extends FragmentPagerAdapter {
         return fragments.get(position);
     }
 
+    public FirstTimeSetupFragment getItemCasted(int position) {
+        return (FirstTimeSetupFragment) fragments.get(position);
+    }
+
     @Override
     public void registerDataSetObserver(@NonNull DataSetObserver observer) {
         super.registerDataSetObserver(observer);
