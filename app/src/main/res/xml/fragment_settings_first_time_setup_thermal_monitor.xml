@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory>
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:key="thermalMonitorEnabled"
+            app:title="Enable thermal monitoring" />
+
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:dependency="thermalMonitorEnabled"
+            app:key="thermalMonitorUseRoot"
+            app:title="Use root to access thermal zones" />
+
+        <ListPreference
+            app:defaultValue="0"
+            app:dependency="thermalMonitorEnabled"
+            app:entries="@array/thermalMonitorScaleEntries"
+            app:entryValues="@array/thermalMonitorScaleValues"
+            app:key="thermalMonitorScale"
+            app:summary="Choose the temperature scale to use."
+            app:title="Temperature scale" />
+
+        <com.gitlab.saschabrunner.thermalmonitor.thermal.ThermalZonePickerPreference
+            app:dependency="thermalMonitorEnabled"
+            app:entries="@array/emptyStringArray"
+            app:entryValues="@array/emptyStringArray"
+            app:key="thermalMonitorThermalZones"
+            app:summary="Select the thermal zones to monitor."
+            app:title="Thermal zones" />
+    </PreferenceCategory>
+
+</androidx.preference.PreferenceScreen>
