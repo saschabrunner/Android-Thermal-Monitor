@@ -10,6 +10,7 @@ import java.util.Set;
 
 public class PreferenceConstants {
     /* Keys */
+    public static final String KEY_ROOT_FIRST_TIME_SETUP_COMPLETED = "firstTimeSetupCompleted";
     public static final String KEY_ROOT_ENABLED = "rootEnabled";
     public static final String KEY_THERMAL_MONITOR_ENABLED = "thermalMonitorEnabled";
     public static final String KEY_THERMAL_MONITOR_USE_ROOT = "thermalMonitorUseRoot";
@@ -27,6 +28,7 @@ public class PreferenceConstants {
 
     /* Defaults (only provided as fallback, normally the defaults in the preference XMLs should
      * be applied at application launch */
+    public static final boolean DEF_ROOT_FIRST_TIME_SETUP_COMPLETED = false;
     public static final boolean DEF_ROOT_ENABLED = false;
     public static final boolean DEF_THERMAL_MONITOR_ENABLED = false;
     public static final boolean DEF_THERMAL_MONITOR_USE_ROOT = false;

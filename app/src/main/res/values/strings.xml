@@ -58,4 +58,9 @@
     <string name="version">Version</string>
     <string name="developed_by_sascha_brunner">Developed by Sascha Brunner</string>
     <string name="contact_killerirus_gmail_com">Contact: killerirus@gmail.com</string>
+    <string name="title_activity_first_time_setup">Setup</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_licenses">Licenses</string>
+    <string name="next">next</string>
+    <string name="finish">finish</string>
 </resources>
