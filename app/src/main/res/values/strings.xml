@@ -74,4 +74,6 @@
     <string name="overlay_permission_explanation">For the app to work, you need to enable a special permission, allowing this application to draw overlays over other applications. Press the button below to open the Android system dialog where you can enable this setting.</string>
     <string name="overlay_permission_note">For security, older versions of Android might disable some features while the overlay is running. For example it might not be possible to install an application from an external source (the install button will not work). To fix this, it is enough to stop the service of this application while these features are required.</string>
     <string name="thermal_monitor">Thermal Monitor</string>
+    <string name="info">Info</string>
+    <string name="description_notification_channel_default">Used for the required persistent notification of the service.</string>
 </resources>

@@ -40,7 +40,7 @@
         android:layout_marginTop="24dp"
         android:layout_marginRight="16dp"
         android:src="@drawable/ic_info_black_24dp"
-        android:contentDescription="TODO" />
+        android:contentDescription="@string/info" />
 
     <TextView
         android:layout_width="match_parent"

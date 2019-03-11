@@ -90,16 +90,16 @@ public class MonitorService extends Service implements MonitorController {
         // Create notification channel if needed
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel =
-                    new NotificationChannel(Constants.NOTIFICATION_CHANNEL_ID_DEFAULT,
-                            "Default", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("TODO");
+                    new NotificationChannel(Constants.NOTIFICATION_CHANNEL_ID_SERVICE,
+                            "Service", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription(getString(R.string.description_notification_channel_default));
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
 
         // Build initial notification
         notificationBuilder =
-                new NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID_DEFAULT)
+                new NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID_SERVICE)
                         .setSmallIcon(R.drawable.ic_stat_default)
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setOnlyAlertOnce(true)
