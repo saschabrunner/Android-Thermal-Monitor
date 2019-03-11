@@ -2,6 +2,8 @@ package com.gitlab.saschabrunner.thermalmonitor.main.ui;
 
 import android.database.DataSetObserver;
 
+import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +20,9 @@ public class FirstTimeSetupPagerAdapter extends FragmentPagerAdapter {
 
         fragments = new ArrayList<>();
         fragments.add(new FirstTimeSetupWelcomeFragment());
-        fragments.add(new FirstTimeSetupOverlayFragment());
+        if (Utils.overlayPermissionRequired()) {
+            fragments.add(new FirstTimeSetupOverlayFragment());
+        }
         fragments.add(new FirstTimeSetupThermalMonitorFragment());
     }
 
