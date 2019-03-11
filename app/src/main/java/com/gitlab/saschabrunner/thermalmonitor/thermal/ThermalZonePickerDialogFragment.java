@@ -75,6 +75,21 @@ public class ThermalZonePickerDialogFragment extends PreferenceDialogFragmentCom
     protected void onBindDialogView(View view) {
         super.onBindDialogView(view);
 
+        try {
+            if (!ThermalMonitorValidator.checkMonitoringAvailable(getContext(),
+                    ThermalMonitor.Preferences.getPreferencesAllThermalZones(
+                            Utils.getGlobalPreferences(getContext())))) {
+                dismiss();
+                return;
+            }
+        } catch (MonitorException e) {
+            Log.e(TAG, "Illegal configuration for monitor", e);
+            MessageUtils.showInfoDialog(getContext(), R.string.thermalMonitoringNotAvailable,
+                    R.string.monitorConfigurationInvalid);
+            dismiss();
+            return;
+        }
+
         controller = new ThermalMonitorController();
         listAdapter = new ThermalZonePickerListAdapter();
         progressBar = view.findViewById(R.id.dialogThermalZonePickerProgressBar);

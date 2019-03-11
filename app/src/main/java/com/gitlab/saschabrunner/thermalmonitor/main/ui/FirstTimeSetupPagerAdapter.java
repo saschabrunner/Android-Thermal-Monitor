@@ -45,6 +45,4 @@ public class FirstTimeSetupPagerAdapter extends FragmentPagerAdapter {
     public int getCount() {
         return fragments.size();
     }
-
-
 }

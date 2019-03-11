@@ -36,24 +36,76 @@ public class ThermalMonitor implements Runnable, Monitor {
     private static final String THERMAL_ZONE_REGEX = "(thermal_zone)[0-9]+";
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS, FAILURE_REASON_NO_ENABLED_THERMAL_ZONES,
-            FAILURE_REASON_TYPE_NO_PERMISSION, FAILURE_REASON_TEMP_NO_PERMISSION,
-            FAILURE_REASON_NO_ROOT_IPC, FAILURE_REASON_TYPE_NOT_READABLE,
-            FAILURE_REASON_TEMP_NOT_READABLE, FAILURE_REASON_THERMAL_ZONES_NOT_READABLE,
-            FAILURE_REASON_ILLEGAL_CONFIGURATION})
+    @IntDef({FAILURE_REASON_OK, FAILURE_REASON_DIR_NOT_EXISTS,
+            FAILURE_REASON_NO_THERMAL_ZONES_FOUND, FAILURE_REASON_TYPE_NO_PERMISSION,
+            FAILURE_REASON_TEMP_NO_PERMISSION, FAILURE_REASON_NO_ROOT_IPC,
+            FAILURE_REASON_TYPE_NOT_READABLE_ROOT, FAILURE_REASON_TEMP_NOT_READABLE_ROOT,
+            FAILURE_REASON_THERMAL_ZONES_NOT_READABLE_ROOT, FAILURE_REASON_ILLEGAL_CONFIGURATION,
+            FAILURE_REASON_NO_THERMAL_ZONES_ENABLED, FAILURE_REASON_NO_THERMAL_ZONES_FOUND_ROOT})
     public @interface FAILURE_REASON {
     }
 
+    /**
+     * Everything seems fine with the supplied configuration.
+     */
     public static final int FAILURE_REASON_OK = 0;
+
+    /**
+     * The directory /sys/class/thermal does not exist or is not readable.
+     */
     public static final int FAILURE_REASON_DIR_NOT_EXISTS = 1;
-    public static final int FAILURE_REASON_NO_ENABLED_THERMAL_ZONES = 2;
+
+    /**
+     * The directory /sys/class/thermal does not contain any readable thermal zones (no root).
+     */
+    public static final int FAILURE_REASON_NO_THERMAL_ZONES_FOUND = 2;
+
+    /**
+     * The file 'type', containing the type name, of a thermal zone is not readable (no root).
+     */
     public static final int FAILURE_REASON_TYPE_NO_PERMISSION = 3;
+
+    /**
+     * The file 'temp', containing the current temperature, of a thermal zone is not readable
+     * (no root).
+     */
     public static final int FAILURE_REASON_TEMP_NO_PERMISSION = 4;
+
+    /**
+     * No root IPC object was provided to the monitor, even though root is enabled.
+     */
     public static final int FAILURE_REASON_NO_ROOT_IPC = 5;
-    public static final int FAILURE_REASON_TYPE_NOT_READABLE = 6;
-    public static final int FAILURE_REASON_TEMP_NOT_READABLE = 7;
-    public static final int FAILURE_REASON_THERMAL_ZONES_NOT_READABLE = 8;
+
+    /**
+     * The file 'type', containing the type name, of a thermal zone is not readable (using root).
+     */
+    public static final int FAILURE_REASON_TYPE_NOT_READABLE_ROOT = 6;
+
+    /**
+     * The file 'temp', containing the current temperature, of a thermal zone is not readable
+     * (using root).
+     */
+    public static final int FAILURE_REASON_TEMP_NOT_READABLE_ROOT = 7;
+
+    /**
+     * Thermal zones could not be listed (using root).
+     */
+    public static final int FAILURE_REASON_THERMAL_ZONES_NOT_READABLE_ROOT = 8;
+
+    /**
+     * Configuration contains invalid values / values out of range.
+     */
     public static final int FAILURE_REASON_ILLEGAL_CONFIGURATION = 9;
+
+    /**
+     * No thermal zone has been enabled, but some are available.
+     */
+    public static final int FAILURE_REASON_NO_THERMAL_ZONES_ENABLED = 10;
+
+    /**
+     * The directory /sys/class/thermal does not contain any readable thermal zones (using root).
+     */
+    public static final int FAILURE_REASON_NO_THERMAL_ZONES_FOUND_ROOT = 11;
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({SCALE_CELSIUS, SCALE_FAHRENHEIT})
@@ -106,7 +158,12 @@ public class ThermalMonitor implements Runnable, Monitor {
         // Check if dirs for thermal zones are present
         List<File> thermalZoneDirs = getFilteredThermalZoneDirs();
         if (thermalZoneDirs.isEmpty()) {
-            return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
+            thermalZoneDirs = getThermalZoneDirs();
+            if (thermalZoneDirs.isEmpty()) {
+                return FAILURE_REASON_NO_THERMAL_ZONES_FOUND;
+            } else {
+                return FAILURE_REASON_NO_THERMAL_ZONES_ENABLED;
+            }
         }
 
         // Check if required files are accessible for every thermal zone
@@ -139,11 +196,16 @@ public class ThermalMonitor implements Runnable, Monitor {
         try {
             thermalZoneDirs = getFilteredThermalZoneDirsRoot();
             if (thermalZoneDirs.isEmpty()) {
-                return FAILURE_REASON_NO_ENABLED_THERMAL_ZONES;
+                thermalZoneDirs = getThermalZoneDirsRoot();
+                if (thermalZoneDirs.isEmpty()) {
+                    return FAILURE_REASON_NO_THERMAL_ZONES_FOUND_ROOT;
+                } else {
+                    return FAILURE_REASON_NO_THERMAL_ZONES_ENABLED;
+                }
             }
         } catch (RemoteException e) {
             Log.e(TAG, "Got exception while reading thermal zones", e);
-            return FAILURE_REASON_THERMAL_ZONES_NOT_READABLE;
+            return FAILURE_REASON_THERMAL_ZONES_NOT_READABLE_ROOT;
         }
 
         // Check if type is available for every thermal zone
@@ -152,12 +214,12 @@ public class ThermalMonitor implements Runnable, Monitor {
                 List<String> type = rootIpc.openAndReadFile(
                         ThermalZone.getTypeFilePath(thermalZoneDir));
                 if (type == null || type.isEmpty()) {
-                    return FAILURE_REASON_TYPE_NOT_READABLE;
+                    return FAILURE_REASON_TYPE_NOT_READABLE_ROOT;
                 }
             }
         } catch (RemoteException e) {
             Log.e(TAG, "Got exception while reading thermal zone type", e);
-            return FAILURE_REASON_TYPE_NOT_READABLE;
+            return FAILURE_REASON_TYPE_NOT_READABLE_ROOT;
         }
 
         // Check if temperature is available for every thermal zone
@@ -167,12 +229,12 @@ public class ThermalMonitor implements Runnable, Monitor {
                         ThermalZone.getTemperatureFilePath(thermalZoneDir));
 
                 if (temperature == null || temperature.isEmpty()) {
-                    return FAILURE_REASON_TEMP_NOT_READABLE;
+                    return FAILURE_REASON_TEMP_NOT_READABLE_ROOT;
                 }
             }
         } catch (RemoteException e) {
             Log.e(TAG, "Got exception while reading thermal zone temperature", e);
-            return FAILURE_REASON_TEMP_NOT_READABLE;
+            return FAILURE_REASON_TEMP_NOT_READABLE_ROOT;
         }
 
         return FAILURE_REASON_OK;
