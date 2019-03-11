@@ -2,16 +2,16 @@
 <androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory app:title="CPU Frequency Monitor">
+    <PreferenceCategory app:title="@string/cpu_frequency_monitor">
         <Preference
             app:key="dummyValidatePreferences"
-            app:title="Check compatibility"
-            app:summary="Check the compatibility of this module with the current settings." />
+            app:title="@string/check_compatibility"
+            app:summary="@string/check_compatibility_summary" />
 
         <CheckBoxPreference
             app:defaultValue="true"
             app:key="cpuFreqMonitorEnabled"
-            app:title="Enable CPU frequency monitoring" />
+            app:title="@string/enable_cpu_frequency_monitoring" />
 
         <com.gitlab.saschabrunner.thermalmonitor.main.ui.CustomSeekBarPreference
             android:max="9990"
@@ -19,8 +19,8 @@
             app:key="cpuFreqMonitorRefreshInterval"
             app:min="500"
             app:stepWidth="100"
-            app:summary="Choose the refresh interval to use in milliseconds."
-            app:title="Refresh interval" />
+            app:summary="@string/refresh_interval_summary"
+            app:title="@string/refresh_interval" />
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>

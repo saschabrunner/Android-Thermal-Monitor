@@ -2,38 +2,38 @@
 <androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="Overlay">
+    <PreferenceCategory app:title="@string/overlay">
         <ListPreference
             app:defaultValue="0x33"
             app:entries="@array/overlayPositionEntries"
             app:entryValues="@array/overlayPositionValues"
             app:key="overlayTextGravity"
-            app:summary="Choose the position of the overlay to appear in."
-            app:title="Overlay position" />
+            app:summary="@string/overlay_position_summary"
+            app:title="@string/overlay_position" />
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             app:cpv_showAlphaSlider="true"
             app:defaultValue="@color/overlayBackgroundColorDefault"
             app:key="overlayBackgroundColor"
-            app:summary="Choose the background color and the transparency of the overlay."
-            app:title="Background color" />
+            app:summary="@string/background_color_summary"
+            app:title="@string/background_color" />
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             app:cpv_showAlphaSlider="true"
             app:defaultValue="@color/overlayTextColorDefault"
             app:key="overlayTextColor"
-            app:summary="Choose the text color to use on the overlay."
-            app:title="Text color" />
+            app:summary="@string/text_color_summary"
+            app:title="@string/text_color" />
         <com.gitlab.saschabrunner.thermalmonitor.main.ui.CustomSeekBarPreference
             android:max="50"
             app:defaultValue="10"
             app:key="overlayTextSize"
             app:min="4"
             app:stepWidth="2"
-            app:summary="Choose the size of the text to use on the overlay."
-            app:title="Text size" />
+            app:summary="@string/text_size_summary"
+            app:title="@string/text_size" />
         <CheckBoxPreference
             app:defaultValue="true"
             app:key="overlayLabelVisibility"
-            app:title="Show labels" />
+            app:title="@string/show_labels" />
         <com.gitlab.saschabrunner.thermalmonitor.main.ui.CustomSeekBarPreference
             android:max="300"
             app:defaultValue="130"
@@ -41,8 +41,8 @@
             app:key="overlayLabelWidth"
             app:min="30"
             app:stepWidth="10"
-            app:summary="Choose the width used for the labels in the overlay."
-            app:title="Label width" />
+            app:summary="@string/label_width_summary"
+            app:title="@string/label_width" />
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>
