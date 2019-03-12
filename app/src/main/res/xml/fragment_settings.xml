@@ -13,7 +13,7 @@
             app:title="@string/open_overlay_permission_setting" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="UI">
+    <PreferenceCategory app:title="@string/ui">
         <Preference
             app:fragment="com.gitlab.saschabrunner.thermalmonitor.main.ui.OverlaySettingsFragment"
             app:title="@string/overlay" />
