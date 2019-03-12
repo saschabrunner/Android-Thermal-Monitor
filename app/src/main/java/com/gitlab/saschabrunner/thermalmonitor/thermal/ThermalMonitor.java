@@ -298,7 +298,7 @@ public class ThermalMonitor implements Runnable, Monitor {
             } catch (InterruptedException e) {
                 if (controller.isRunning()) {
                     // No interrupt should happen except when monitor service quits
-                    Log.e(TAG, "Unexcpected Interrupt received", e);
+                    Log.e(TAG, "Unexpected Interrupt received", e);
                     return;
                 }
             }
