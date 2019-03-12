@@ -1,25 +1,24 @@
 package com.gitlab.saschabrunner.thermalmonitor.main.monitor;
 
-import android.content.SharedPreferences;
-
 public interface Monitor {
     /**
-     *
-     * @param monitorPreferences
-     * @return 0 to indicate support, non zero value to indicate no support
+     * Checks whether the monitor is operational with the supplied preferences.
+     * @param preferences Preferences to check compatibility with.
+     * @return 0 to indicate support, non zero value to indicate no support.
      */
-    int checkSupported(SharedPreferences monitorPreferences) throws MonitorException;
+    int checkSupported(MonitorPreferences preferences);
 
     /**
-     *
-     * @param controller
-     * @param monitorPreferences
+     * Initializes the monitor and assigns a monitor controller to it.
+     * @param controller Monitor controller that is called by the monitor to check whether
+     *                   it should pause/stop.
+     * @param preferences Preferences to use for the monitor.
      */
-    void init(MonitorController controller, SharedPreferences monitorPreferences)
+    void init(MonitorController controller, MonitorPreferences preferences)
             throws MonitorException;
 
     /**
-     *
+     * Deinitializes a monitor to close handles / free up resources.
      */
     void deinit();
 }

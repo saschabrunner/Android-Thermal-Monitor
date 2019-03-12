@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/overlay">
+        <ListPreference
+            app:defaultValue="0x33"
+            app:entries="@array/overlayPositionEntries"
+            app:entryValues="@array/overlayPositionValues"
+            app:key="overlayTextGravity"
+            app:summary="@string/overlay_position_summary"
+            app:title="@string/overlay_position" />
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
+            app:cpv_showAlphaSlider="true"
+            app:defaultValue="@color/overlayBackgroundColorDefault"
+            app:key="overlayBackgroundColor"
+            app:summary="@string/background_color_summary"
+            app:title="@string/background_color" />
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
+            app:cpv_showAlphaSlider="true"
+            app:defaultValue="@color/overlayTextColorDefault"
+            app:key="overlayTextColor"
+            app:summary="@string/text_color_summary"
+            app:title="@string/text_color" />
+        <com.gitlab.saschabrunner.thermalmonitor.main.ui.CustomSeekBarPreference
+            android:max="50"
+            app:defaultValue="10"
+            app:key="overlayTextSize"
+            app:min="4"
+            app:stepWidth="2"
+            app:summary="@string/text_size_summary"
+            app:title="@string/text_size" />
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:key="overlayLabelVisibility"
+            app:title="@string/show_labels" />
+        <com.gitlab.saschabrunner.thermalmonitor.main.ui.CustomSeekBarPreference
+            android:max="300"
+            app:defaultValue="130"
+            app:dependency="overlayLabelVisibility"
+            app:key="overlayLabelWidth"
+            app:min="30"
+            app:stepWidth="10"
+            app:summary="@string/label_width_summary"
+            app:title="@string/label_width" />
+    </PreferenceCategory>
+
+</androidx.preference.PreferenceScreen>

@@ -15,6 +15,11 @@ public class GlobalPreferences {
         this.preferences = preferences;
     }
 
+    public boolean firstTimeSetupCompleted() {
+        return preferences.getBoolean(PreferenceConstants.KEY_ROOT_FIRST_TIME_SETUP_COMPLETED,
+                PreferenceConstants.DEF_ROOT_FIRST_TIME_SETUP_COMPLETED);
+    }
+
     public boolean rootEnabled() {
         return preferences.getBoolean(PreferenceConstants.KEY_ROOT_ENABLED,
                 PreferenceConstants.DEF_ROOT_ENABLED);

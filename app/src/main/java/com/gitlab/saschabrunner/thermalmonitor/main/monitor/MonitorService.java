@@ -10,7 +10,6 @@ import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,12 +39,15 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.core.app.NotificationCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class MonitorService extends Service implements MonitorController {
     private static final String TAG = "MonitorService";
+
+    private static boolean serviceRunning = false;
 
     private final Lock mutex = new ReentrantLock();
     private final Condition notPaused = mutex.newCondition();
@@ -70,35 +72,34 @@ public class MonitorService extends Service implements MonitorController {
         // Set the service to a foreground service
         startForeground(Constants.NOTIFICATION_ID_MONITOR, notificationBuilder.build());
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(this)) {
+        if (!Utils.overlayPermissionEnabled(this)) {
                 Toast.makeText(this,
-                        "Overlay permission not enabled, open overlay settings to enable",
+                        getString(R.string.overlay_permission_not_enabled_text),
                         Toast.LENGTH_LONG).show();
                 stopSelf();
                 return;
-            }
         }
 
         initBroadcastReceiver();
         initOverlay();
         initMonitoring();
+        serviceRunning = true;
     }
 
     private void initNotification() {
         // Create notification channel if needed
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel =
-                    new NotificationChannel(Constants.NOTIFICATION_CHANNEL_ID_DEFAULT,
-                            "Default", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("TODO");
+                    new NotificationChannel(Constants.NOTIFICATION_CHANNEL_ID_SERVICE,
+                            "Service", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription(getString(R.string.description_notification_channel_default));
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
 
         // Build initial notification
         notificationBuilder =
-                new NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID_DEFAULT)
+                new NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID_SERVICE)
                         .setSmallIcon(R.drawable.ic_stat_default)
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setOnlyAlertOnce(true)
@@ -112,7 +113,9 @@ public class MonitorService extends Service implements MonitorController {
     }
 
     private void initOverlay() {
-        OverlayConfig overlayConfig = new OverlayConfig(Utils.getGlobalPreferences(this));
+        OverlayConfig overlayConfig = new OverlayConfig(
+                Utils.getGlobalPreferences(this),
+                getResources().getDisplayMetrics());
 
         // Inflate layout
         OverlayBinding overlayViewBinding = OverlayBinding.inflate(LayoutInflater.from(this));
@@ -162,8 +165,8 @@ public class MonitorService extends Service implements MonitorController {
                 initCpuFreqMonitoring();
             }
         } catch (MonitorException e) {
-            Log.e(TAG, e.getMessage(this), e);
-            stopWithMessage("Monitor exited with exception (check compatibility)");
+            Log.e(TAG, "Monitor could not be initialized", e);
+            stopWithMessage(R.string.monitorExitedWithException);
         }
 
         for (Thread monitoringThread : monitoringThreads) {
@@ -179,7 +182,7 @@ public class MonitorService extends Service implements MonitorController {
                 thermalMonitor = new ThermalMonitor(RootIPCSingleton.getInstance(this));
             } catch (RootAccessException e) {
                 Log.e(TAG, "Service could not acquire root access", e);
-                stopWithMessage("Service could not acquire root access");
+                stopWithMessage(R.string.couldNotAcquireRootAccess);
                 return;
             }
 
@@ -188,29 +191,31 @@ public class MonitorService extends Service implements MonitorController {
             thermalMonitor = new ThermalMonitor();
         }
 
-        if (thermalMonitor.checkSupported(Utils.getGlobalPreferences(this))
-                == ThermalMonitor.FAILURE_REASON_OK) {
-            thermalMonitor.init(this, Utils.getGlobalPreferences(this));
+        MonitorPreferences preferences =
+                ThermalMonitor.Preferences.getPreferences(Utils.getGlobalPreferences(this));
+        if (thermalMonitor.checkSupported(preferences) == ThermalMonitor.FAILURE_REASON_OK) {
+            thermalMonitor.init(this, preferences);
             monitors.add(thermalMonitor);
             monitoringThreads.add(new Thread(thermalMonitor, "ThermalMonitor"));
         } else {
-            stopWithMessage("Thermal monitor not supported with current configuration");
+            stopWithMessage(R.string.thermalMonitorNotSupportedWithCurrentConfiguration);
         }
     }
 
     private void initCpuFreqMonitoring() throws MonitorException {
         CPUFreqMonitor cpuFreqMonitor = new CPUFreqMonitor(this);
-        if (cpuFreqMonitor.checkSupported(Utils.getGlobalPreferences(this))
-                == CPUFreqMonitor.FAILURE_REASON_OK) {
-            cpuFreqMonitor.init(this, Utils.getGlobalPreferences(this));
+        MonitorPreferences preferences =
+                CPUFreqMonitor.Preferences.getPreferences(Utils.getGlobalPreferences(this));
+        if (cpuFreqMonitor.checkSupported(preferences) == CPUFreqMonitor.FAILURE_REASON_OK) {
+            cpuFreqMonitor.init(this, preferences);
             monitors.add(cpuFreqMonitor);
             monitoringThreads.add(new Thread(cpuFreqMonitor, "CPUFreqMonitor"));
         } else {
-            stopWithMessage("CPU frequency monitor not supported with current configuration");
+            stopWithMessage(R.string.cpuFrequencyMonitorNotSupportedWithCurrentConfiguration);
         }
     }
 
-    private void stopWithMessage(String message) {
+    private void stopWithMessage(@StringRes int message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         stopSelf();
     }
@@ -224,6 +229,7 @@ public class MonitorService extends Service implements MonitorController {
     @Override
     public void onDestroy() {
         Log.v(TAG, "onDestroy");
+        serviceRunning = false;
         deinitMonitoring();
         deinitOverlay();
         deinitBroadcastReceiver();
@@ -239,6 +245,15 @@ public class MonitorService extends Service implements MonitorController {
             }
         } finally {
             mutex.unlock();
+        }
+
+        try {
+            for (Thread monitoringThread : monitoringThreads) {
+                monitoringThread.join();
+            }
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Received unexpected interrupt", e);
+            return;
         }
 
         for (Monitor monitor : monitors) {
@@ -330,6 +345,10 @@ public class MonitorService extends Service implements MonitorController {
         } finally {
             mutex.unlock();
         }
+    }
+
+    public static boolean isServiceRunning() {
+        return serviceRunning;
     }
 
     private class PowerEventReceiver extends BroadcastReceiver {

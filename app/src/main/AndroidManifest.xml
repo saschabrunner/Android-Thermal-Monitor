@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
-        android:name="com.gitlab.saschabrunner.thermalmonitor.main.App"
+        android:name=".main.App"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_launcher"
@@ -24,11 +24,18 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".main.ui.FirstTimeSetupActivity"
+            android:label="@string/title_activity_first_time_setup"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
+            android:name=".main.ui.LicensesActivity"
+            android:label="@string/title_activity_licenses" />
+
         <service
             android:name=".main.monitor.MonitorService"
             android:exported="false" />
-
-        <activity android:name=".main.ui.LicensesActivity" />
     </application>
 
 </manifest>
