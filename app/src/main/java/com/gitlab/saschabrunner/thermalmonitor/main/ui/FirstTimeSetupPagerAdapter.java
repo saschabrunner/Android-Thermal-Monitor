@@ -1,6 +1,6 @@
 package com.gitlab.saschabrunner.thermalmonitor.main.ui;
 
-import android.database.DataSetObserver;
+import android.view.ViewGroup;
 
 import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 
@@ -13,32 +13,38 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 
 public class FirstTimeSetupPagerAdapter extends FragmentPagerAdapter {
-    private List<Fragment> fragments;
+    private List<FirstTimeSetupFragmentHolder> fragments;
 
     public FirstTimeSetupPagerAdapter(@NonNull FragmentManager fm) {
         super(fm);
 
         fragments = new ArrayList<>();
-        fragments.add(new FirstTimeSetupWelcomeFragment());
+        fragments.add(new FirstTimeSetupFragmentHolder(FirstTimeSetupWelcomeFragment.class));
         if (Utils.overlayPermissionRequired()) {
-            fragments.add(new FirstTimeSetupOverlayFragment());
+            fragments.add(new FirstTimeSetupFragmentHolder(FirstTimeSetupOverlayFragment.class));
         }
-        fragments.add(new FirstTimeSetupThermalMonitorFragment());
+        fragments.add(new FirstTimeSetupFragmentHolder(FirstTimeSetupThermalMonitorFragment.class));
+    }
+
+    @NonNull
+    @Override
+    public Object instantiateItem(@NonNull ViewGroup container, int position) {
+        FirstTimeSetupFragment fragment =
+                (FirstTimeSetupFragment) super.instantiateItem(container, position);
+
+        // Add existing fragment back to list (happens after screen rotation for example)
+        fragments.get(position).setFragment(fragment);
+        return fragment;
     }
 
     @NonNull
     @Override
     public Fragment getItem(int position) {
-        return fragments.get(position);
+        return (Fragment) fragments.get(position).getFragment();
     }
 
-    public FirstTimeSetupFragment getItemCasted(int position) {
-        return (FirstTimeSetupFragment) fragments.get(position);
-    }
-
-    @Override
-    public void registerDataSetObserver(@NonNull DataSetObserver observer) {
-        super.registerDataSetObserver(observer);
+    public FirstTimeSetupFragment getItemRaw(int position) {
+        return fragments.get(position).getFragment();
     }
 
     @Override
