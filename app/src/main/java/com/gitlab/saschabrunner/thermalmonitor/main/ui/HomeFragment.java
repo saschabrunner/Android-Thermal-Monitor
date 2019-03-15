@@ -65,7 +65,9 @@ public class HomeFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        uiUpdateHandler.removeCallbacks(periodicUIUpdater);
+        if (uiUpdateHandler != null) {
+            uiUpdateHandler.removeCallbacks(periodicUIUpdater);
+        }
     }
 
     private boolean startService() {

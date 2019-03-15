@@ -7,15 +7,12 @@ import android.view.View;
 
 import com.gitlab.saschabrunner.thermalmonitor.R;
 import com.gitlab.saschabrunner.thermalmonitor.main.GlobalPreferences;
-import com.gitlab.saschabrunner.thermalmonitor.util.PreferenceConstants;
-import com.gitlab.saschabrunner.thermalmonitor.util.Utils;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -32,8 +29,6 @@ public class MainActivity extends AppCompatActivity
     private static final String FRAGMENT_SETTINGS = "settings";
     private static final String FRAGMENT_ABOUT = "about";
 
-    private static final int REQUEST_CODE_INITIAL_SETUP = 1;
-
     private final Map<String, Fragment> fragmentMap = new HashMap<>();
 
     @Override
@@ -47,21 +42,8 @@ public class MainActivity extends AppCompatActivity
 
         if (!GlobalPreferences.getInstance().firstTimeSetupCompleted()) {
             // Launch first time setup
-            startActivityForResult(new Intent(this, FirstTimeSetupActivity.class),
-                    REQUEST_CODE_INITIAL_SETUP);
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == REQUEST_CODE_INITIAL_SETUP
-                && resultCode == FirstTimeSetupActivity.RESULT_CODE_SETUP_FINISHED) {
-            Utils.getGlobalPreferences(this)
-                    .edit()
-                    .putBoolean(PreferenceConstants.KEY_ROOT_FIRST_TIME_SETUP_COMPLETED, true)
-                    .apply();
+            startActivity(new Intent(this, FirstTimeSetupActivity.class));
+            finish();
         }
     }
 
